@@ -1,4 +1,4 @@
-import queue, threading, time, cv2, math
+import queue, threading, time, cv2, math, logging
 from typing import List, Dict, Tuple, Optional
 
 from Board   import Board
@@ -7,6 +7,9 @@ from Piece   import Piece
 from img     import Img
 
 from KeyboardInput import KeyboardProcessor, KeyboardProducer
+
+# set up a module-level logger – real apps can configure handlers/levels
+logger = logging.getLogger(__name__)
 
 class InvalidBoard(Exception): ...
 
@@ -105,8 +108,7 @@ class Game:
         self.pos.clear()
         for p in self.pieces:
             p.draw_on_board(self.curr_board, now_ms=self.game_time_ms())
-
-            self.pos[p.state.physics.start_cell] = p
+            self.pos[p.current_cell()] = p
 
         # overlay both players' cursors, but only log on change
         if self.kp1 and self.kp2:
@@ -122,9 +124,9 @@ class Game:
                 cv2.rectangle(self.curr_board.img.img, (x1,y1), (x2,y2), color, 2)
                 # only print if moved
                 prev = getattr(self, last)
-                if prev != (r,c):
-                    print(f"[DRAW] Marker P{player} at ({r}, {c})")
-                    setattr(self, last, (r,c))
+                if prev != (r, c):
+                    logger.debug("Marker P%s moved to (%s, %s)", player, r, c)
+                    setattr(self, last, (r, c))
 
     def _show(self) -> bool:
         cv2.imshow("Kung-Fu Chess", self.curr_board.img.img)
@@ -147,15 +149,16 @@ class Game:
     def _process_input(self, cmd: Command):
         mover = self.piece_by_id.get(cmd.piece_id)
         if not mover:
+            logger.debug("Unknown piece id %s", cmd.piece_id)
             return
         now_ms = self.game_time_ms()
         if not mover.state.can_transition(now_ms):
-            print(f"[FAIL] {mover.id} busy until {mover.state.cooldown_end_ms}")
+            logger.info("%s still in cooldown until %s ms", mover.id, mover.state.cooldown_end_ms)
             return
 
         candidate_state = mover.state.transitions.get(cmd.type, mover.state)
         moveset = candidate_state.moves
-        src = mover.state.physics.start_cell
+        src = mover.current_cell()
         dest = cmd.params[0]
         legal_offset = dest in moveset.get_moves(*src) or cmd.type == 'Jump'
         # Pawn-specific...
@@ -174,20 +177,22 @@ class Game:
                 legal_offset = False
 
         occ = self.pos.get(dest)
-        friendly = (occ and occ is not mover and occ.id[1]==mover.id[1])
+        friendly = (occ and occ is not mover and occ.id[1] == mover.id[1])
         clear = True
         if mover.id[0] in ('R','B','Q'):
             clear = self._path_is_clear(src, dest)
         if legal_offset and clear and not friendly:
             mover.state = candidate_state
             mover.state.reset(cmd)
+            logger.info("%s performs %s to %s", mover.id, cmd.type, dest)
         else:
             mover.state.reset(Command(now_ms, mover.id, 'Idle', []))
+            logger.info("Move rejected for %s to %s", mover.id, dest)
 
     def _resolve_collisions(self):
         occupied: Dict[Tuple[int,int], List[Piece]] = {}
         for p in self.pieces:
-            cell = p.state.physics.start_cell
+            cell = p.current_cell()
             occupied.setdefault(cell, []).append(p)
         for cell, plist in occupied.items():
             if len(plist)<2: continue
@@ -199,7 +204,7 @@ class Game:
     def _validate(self, pieces: List[Piece]) -> bool:
         seen=set(); wking=bking=False
         for p in pieces:
-            cell = p.state.physics.start_cell
+            cell = p.current_cell()
             if cell in seen: return False
             seen.add(cell)
             if p.id.startswith('KW'): wking=True
@@ -212,4 +217,4 @@ class Game:
 
     def _announce_win(self):
         text = 'Black wins!' if any(p.id.startswith('KB') for p in self.pieces) else 'White wins!'
-        print(text)
+        logger.info(text)
