@@ -157,21 +157,22 @@ class Game:
         moveset = candidate_state.moves
         src = mover.state.physics.start_cell
         dest = cmd.params[0]
-        legal_offset = dest in moveset.get_moves(*src)
+        legal_offset = dest in moveset.get_moves(*src) or cmd.type == 'Jump'
         # Pawn-specific...
         piece_type = mover.id[0]
-        if piece_type == 'P':
-            direction = -1 if mover.id[1]=='W' else 1
-            dr, dc = dest[0]-src[0], dest[1]-src[1]
-            forward = (dr==direction and dc==0)
-            diag    = (dr==direction and abs(dc)==1)
+        if piece_type == 'P' and cmd.type != 'Jump':
+            direction = -1 if mover.id[1] == 'W' else 1
+            dr, dc = dest[0] - src[0], dest[1] - src[1]
+            forward = (dr == direction and dc == 0)
+            diag = (dr == direction and abs(dc) == 1)
             occ = self.pos.get(dest)
             if forward:
                 legal_offset &= occ is None
             elif diag:
-                legal_offset &= (occ is not None and occ.id[1]!=mover.id[1])
+                legal_offset &= (occ is not None and occ.id[1] != mover.id[1])
             else:
                 legal_offset = False
+
         occ = self.pos.get(dest)
         friendly = (occ and occ is not mover and occ.id[1]==mover.id[1])
         clear = True
