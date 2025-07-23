@@ -8,10 +8,9 @@ class Moves:
         print(f"[LOAD] Moves from: {txt_path}")
 
 
-    def _load_moves(self, fp) -> List[Tuple[int, int]]:
+    def _load_moves(self, fp) -> List[Tuple[int, int, int]]:
         with open(fp) as f:
-            return [tuple(map(int, line.strip("[]\n ").split(",")))
-                    for line in f if line.strip()]
+            return [self._parse(l) for l in f if l.strip() and not l.lstrip().startswith("#")]
 
     def get_moves(self, r: int, c: int) -> List[Tuple[int, int]]:
         moves = []
@@ -21,5 +20,24 @@ class Moves:
             if 0 <= nr < self.H and 0 <= nc < self.W:
                 moves.append((nr, nc))
         return moves
+
+    @staticmethod
+    def _parse(line: str) -> Tuple[int, int, int]:
+        # 1️⃣ remove surrounding [ ] and any trailing comment
+        clean = line.partition("#")[0].strip()  # drop inline comments
+        clean = clean.strip("[] \n")  # remove brackets / NL
+
+        # 2️⃣ turn commas into spaces and split
+        parts = [int(x) for x in clean.replace(",", " ").split()]
+        if len(parts) == 2:
+            dr, dc = parts
+            tag = -1  # -1 means “always allowed”
+        elif len(parts) == 3:
+            dr, dc, tag = parts
+        else:
+            raise ValueError(f"Bad moves.txt line: {line!r}")
+
+        return dr, dc, tag
+
 
 

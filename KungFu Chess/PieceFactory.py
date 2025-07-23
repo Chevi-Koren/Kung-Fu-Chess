@@ -10,10 +10,10 @@ from State import State
 
 
 class PieceFactory:
-    def __init__(self, board: Board):
+    def __init__(self, board: Board, graphics_factory=None, physics_factory=None):
         self.board = board
-        self.physics_factory = PhysicsFactory(board)
-        self.graphics_factory = GraphicsFactory()
+        self.physics_factory = physics_factory or PhysicsFactory(board)
+        self.graphics_factory = graphics_factory or GraphicsFactory()
         self.templates: Dict[str, State] = {}
 
     # Scan folders once, cache ready-made state machines -----------
