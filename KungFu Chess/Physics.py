@@ -1,6 +1,9 @@
 from typing import Tuple, Optional
 from Command import Command
-import math
+import math, logging
+
+logger = logging.getLogger(__name__)
+
 class Physics:
     SLIDE_CELLS_PER_SEC = 4.0
 
@@ -17,7 +20,7 @@ class Physics:
     def reset(self, cmd: Command):
         # cmd.params may be [] for an "Idle" reset; guard against that
         dest_cell = cmd.params[0] if cmd.params else self.start_cell
-        print(f"[Physics.reset] from {self.start_cell} to {dest_cell}")
+        logger.debug("Physics.reset from %s to %s", self.start_cell, dest_cell)
         self.mode = cmd.type
         self.end_cell   = dest_cell                # new target
         self.start_ms   = cmd.timestamp
@@ -55,7 +58,7 @@ class Physics:
         cur_col = sx + (ex - sx) * t
         cur_square = (int(round(cur_row)), int(round(cur_col)))
         if cur_square != self.last_square:
-            print(f"[TRACE] entering {cur_square}")
+            logger.debug("[TRACE] entering %s", cur_square)
             self.last_square = cur_square
 
 

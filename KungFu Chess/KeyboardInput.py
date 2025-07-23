@@ -1,6 +1,8 @@
-import threading
+import threading, logging
 import keyboard                  # pip install keyboard
 from Command import Command
+
+logger = logging.getLogger(__name__)
 
 class KeyboardProcessor:
     """
@@ -12,6 +14,7 @@ class KeyboardProcessor:
         self.cols = cols
         self.keymap = keymap
         self._cursor = [0, 0]     # [row, col]
+        self._lock = threading.Lock()
 
     def process_key(self, event):
         # Only care about key‑down events
@@ -20,25 +23,27 @@ class KeyboardProcessor:
 
         key = event.name
         action = self.keymap.get(key)
-        print(f"[KEY] Pressed '{key}' → action {action!r}")
+        logger.debug("Key '%s' → action '%s'", key, action)
 
         if action in ("up", "down", "left", "right"):
-            r, c = self._cursor
-            if action == "up":
-                r = max(0, r - 1)
-            elif action == "down":
-                r = min(self.rows - 1, r + 1)
-            elif action == "left":
-                c = max(0, c - 1)
-            elif action == "right":
-                c = min(self.cols - 1, c + 1)
-            self._cursor = [r, c]
-            print(f"[KEY] Cursor moved → ({r}, {c})")
+            with self._lock:
+                r, c = self._cursor
+                if action == "up":
+                    r = max(0, r - 1)
+                elif action == "down":
+                    r = min(self.rows - 1, r + 1)
+                elif action == "left":
+                    c = max(0, c - 1)
+                elif action == "right":
+                    c = min(self.cols - 1, c + 1)
+                self._cursor = [r, c]
+                logger.debug("Cursor moved to (%s,%s)", r, c)
 
         return action
 
     def get_cursor(self) -> tuple[int, int]:
-        return tuple(self._cursor)
+        with self._lock:
+            return tuple(self._cursor)
 
 
 class KeyboardProducer(threading.Thread):
@@ -98,7 +103,7 @@ class KeyboardProducer(threading.Thread):
                     [cell]
                 )
                 self.queue.put(cmd)
-                print(f"[KEY] Player{self.player} queued {cmd_type} of {selected} → {cell} @ {cmd.timestamp}")
+                logger.info("Player%s queued %s of %s → %s at %s", self.player, cmd_type, selected, cell, cmd.timestamp)
                 setattr(self.game, sel_attr, None)
 
     def stop(self):

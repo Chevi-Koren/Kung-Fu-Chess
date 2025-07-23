@@ -3,7 +3,9 @@ from Moves import Moves
 from Graphics import Graphics
 from Physics import Physics
 from typing import Dict
-import time
+import time, logging
+
+logger = logging.getLogger(__name__)
 
 
 class State:
@@ -39,7 +41,7 @@ class State:
 
         # ── internal transition fired by Physics.update() ─────────────────
         if cmd.type == "Arrived" and nxt:
-            print(f"[TRANSITION] Arrived: {self} → {nxt}")
+            logger.debug("[TRANSITION] Arrived: %s → %s", self, nxt)
 
             # 1️⃣ choose rest length according to the *previous* action
             if self.name == "move":
@@ -66,10 +68,10 @@ class State:
             return nxt
 
         if nxt is None:
-            print(f"[TRANSITION MISSING] {cmd.type} from state {self}")
+            logger.warning("[TRANSITION_MISSING] %s from state %s", cmd.type, self)
             return self                      # stay put
 
-        print(f"[TRANSITION] {cmd.type}: {self} → {nxt}")
+        logger.debug("[TRANSITION] %s: %s → %s", cmd.type, self, nxt)
 
         # if cooldown expired, perform the transition
         if self.can_transition(now_ms):

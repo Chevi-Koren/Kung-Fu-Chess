@@ -35,3 +35,11 @@ class Piece:
                         0.5,  # font scale
                         (0, 0, 255, 255), 1, cv2.LINE_AA)  # red
 
+    # ────────────────────────────────────────────────────────────────────
+    # Abstraction helper – SINGLE public accessor so other modules don't have
+    # to reach deep into `state → physics` implementation details.
+    # Does **not** mutate internal state, so thread-safe without extra locks.
+    def current_cell(self) -> tuple[int, int]:
+        """Return the piece's board cell as (row, col)."""
+        return self.state.physics.start_cell
+
