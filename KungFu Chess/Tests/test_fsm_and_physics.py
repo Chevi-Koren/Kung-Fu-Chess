@@ -47,13 +47,13 @@ def build_test_piece(*, cell=(6,0), move_offset=(-1,0)):
     short_rest = State(jumpM , DummyGraphics(), phys); short_rest.name="short_rest"
 
     # external links
-    idle .set_transition("Move", move)
-    idle .set_transition("Jump", jump)
+    idle .set_transition("move", move)
+    idle .set_transition("jump", jump)
     # internal links
-    move .set_transition("Arrived", long_rest)
-    jump .set_transition("Arrived", short_rest)
-    long_rest .set_transition("Arrived", idle)
-    short_rest.set_transition("Arrived", idle)
+    move .set_transition("done", long_rest)
+    jump .set_transition("done", short_rest)
+    long_rest .set_transition("done", idle)
+    short_rest.set_transition("done", idle)
 
     return Piece("PX_%s"%str(cell), idle), board
 
@@ -67,7 +67,7 @@ def advance(piece, frm, to, step=50):
 def test_move_full_cycle():
     p,_ = build_test_piece()
     src=(6,0); dest=(5,0)
-    cmd=Command(0,p.id,"Move",[dest]); p.on_command(cmd,0)
+    cmd=Command(0,p.id,"move",[dest]); p.on_command(cmd,0)
     assert p.state.name=="move"
 
     t=advance(p,0,p.state.physics.duration_ms+10)
@@ -77,7 +77,7 @@ def test_move_full_cycle():
 
 def test_jump_full_cycle():
     p,_ = build_test_piece()
-    cmd=Command(0,p.id,"Jump",[p.state.physics.start_cell])
+    cmd=Command(0,p.id,"jump",[p.state.physics.start_cell])
     p.on_command(cmd,0)
     assert p.state.name=="jump"
     t=advance(p,0,250)
@@ -103,7 +103,7 @@ def test_rook_blocked_clear_path():
     kb,_  = build_test_piece(cell=(7,7)); kb.id="KB_stub"
     game=Game([rook,pawn,kw,kb],board)
 
-    cmd=Command(0,rook.id,"Move",[(2,0)])
+    cmd=Command(0,rook.id,"move",[(2,0)])
     game._process_input(cmd)
     # should be rejected and stay idle
     assert rook.state.name=="idle"

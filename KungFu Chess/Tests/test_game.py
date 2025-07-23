@@ -76,7 +76,7 @@ def test_valid_command_executes():
     kw=DummyPiece("KW_a",(0,0),legal_moves=[(1,1)])
     g =Game([kw,DummyPiece("KB_b",(7,7))],b)
     g.pos={}; g.piece_by_id[kw.id]=kw
-    cmd=Command(500,kw.id,"Move",[(1,1)])
+    cmd=Command(500,kw.id,"move",[(1,1)])
     g._process_input(cmd)
     assert kw.state.physics.start_cell==(1,1)
 
@@ -87,7 +87,7 @@ def test_invalid_command_blocked_by_cooldown():
     g=Game([kw,kb],b)
     kw.state.cooldown_end_ms=9999
     g.piece_by_id[kw.id]=kw
-    g._process_input(Command(500,kw.id,"Move",[(1,1)]))
+    g._process_input(Command(500,kw.id,"move",[(1,1)]))
     assert kw.state.physics.start_cell==(0,0)
 
 def test_command_blocked_by_friendly_occupancy():
@@ -97,7 +97,7 @@ def test_command_blocked_by_friendly_occupancy():
     kb=DummyPiece("KB_b",(7,7))
     g=Game([kw,pawn,kb],b)
     g.pos={(1,1):pawn}
-    g._process_input(Command(100,kw.id,"Move",[(1,1)]))
+    g._process_input(Command(100,kw.id,"move",[(1,1)]))
     assert kw.state.physics.start_cell==(0,0)
 
 def test_win_condition_triggers_correctly():

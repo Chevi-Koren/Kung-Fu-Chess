@@ -1,88 +1,134 @@
+from __future__ import annotations
+
 from typing import Tuple, Optional
-from Command import Command
+from abc import ABC, abstractmethod
 import math, logging
+
+from Command import Command
+from Board import Board
+import numpy as np
 
 logger = logging.getLogger(__name__)
 
-class Physics:
-    SLIDE_CELLS_PER_SEC = 4.0
 
-    def __init__(self, start_cell: Tuple[int, int],
-                 board: "Board", speed_m_s: float = 1.0):
+class BasePhysics(ABC):  # Interface/base class
+
+    def __init__(self, board: Board, param: float = 1.0):
         self.board = board
-        self.start_cell = start_cell
-        self.end_cell = start_cell
-        self.speed = speed_m_s
-        self.start_ms = 0
-        self.last_square = start_cell
-        self.wait_only = False
 
-    def reset(self, cmd: Command):
-        # cmd.params may be [] for an "Idle" reset; guard against that
-        dest_cell = cmd.params[0] if cmd.params else self.start_cell
-        logger.debug("Physics.reset from %s to %s", self.start_cell, dest_cell)
-        self.mode = cmd.type
-        self.end_cell   = dest_cell                # new target
-        self.start_ms   = cmd.timestamp
-        self.last_square = self.start_cell
+        self._start_cell = None
+        self._end_cell   = None
+        self._curr_pos_m   = None
+        
+        self.param  = param
+        self._start_ms   = 0
 
-        dy = self.end_cell[0] - self.start_cell[0]
-        dx = self.end_cell[1] - self.start_cell[1]
-        dist_cells = math.hypot(dx, dy)
-        self.wait_only = (
-                dist_cells == 0
-                and cmd.type != "Idle"
-        )
-        self.duration_ms = max(200,              # minimum 0.2 s so 1-cell is visible
-            dist_cells / self.SLIDE_CELLS_PER_SEC * 1000)
+    # ------------------------------------------------------------------
+    @abstractmethod
+    def reset(self, cmd: Command): ...
 
+    @abstractmethod
+    def update(self, now_ms: int) -> Optional[Command]: ...
 
-    def update(self, now_ms: int):
-        if self.start_cell == self.end_cell and not self.wait_only:
-            return None                   # nothing to do
+    # ------------------------------------------------------------------
+    # Utilities common to all subclasses
+    # ---------------- public helpers ------------------------------------
+    def get_pos_m(self) -> Tuple[float, float]:
+        """Current position in metres."""
+        return self._curr_pos_m
 
-        dur = self.duration_ms
-        t   = min(1.0, (now_ms - self.start_ms) / dur)
+    def get_pos_pix(self) -> Tuple[int, int]:
+        """Current position converted to pixels."""
+        return self.board.m_to_pix(self._curr_pos_m)
 
-        if self.mode == "Jump":
-            # simple parabolic Y-offset so sprite “leaps”
-            height_px = 30                # peak of the arc
-            arc_y = -4 * height_px * (t - 0.5) ** 2 + height_px
-        else:
-            arc_y = 0
+    def get_curr_cell(self) -> Tuple[int, int]:
+        """Return current board cell `(row, col)` derived from position."""
+        return self.board.m_to_cell(self._curr_pos_m)
 
-        # linear interpolation in board space
-        sy, sx = self.start_cell
-        ey, ex = self.end_cell
-        cur_row = sy + (ey - sy) * t
-        cur_col = sx + (ex - sx) * t
-        cur_square = (int(round(cur_row)), int(round(cur_col)))
-        if cur_square != self.last_square:
-            logger.debug("[TRACE] entering %s", cur_square)
-            self.last_square = cur_square
-
-
-        self.curr_px_f = (cur_col * self.board.cell_W_pix,
-                          cur_row * self.board.cell_H_pix - arc_y)
-        self.curr_px   = (round(self.curr_px_f[0]), round(self.curr_px_f[1]))
-
-        if t >= 1.0:
-            self.start_cell = self.end_cell
-            self.wait_only = False
-            return Command(now_ms, "?", "Arrived", [])
-        return None
-
-    # helpers ----------------------------------------------------
-    def get_pos(self) -> Tuple[int, int]:
-        """
-        Current pixel-space upper-left corner of the sprite.
-        Uses the sub-pixel coordinate computed in update();
-        falls back to the square’s origin before the first update().
-        """
-        return getattr(self, "curr_px",
-                       (self.start_cell[1] * self.board.cell_W_pix,
-                        self.start_cell[0] * self.board.cell_H_pix))
+    def get_start_ms(self) -> int:
+        return self._start_ms
 
     def can_be_captured(self) -> bool: return True
     def can_capture(self) -> bool:     return True
+    def is_movement_blocker(self) -> bool: return False
+
+
+# ──────────────────────────────────────────────────────────────────────────
+#  Concrete implementations
+# ──────────────────────────────────────────────────────────────────────────
+
+class IdlePhysics(BasePhysics):
+
+    def reset(self, cmd: Command):
+        self._end_cell = self._start_cell = cmd.params[0]
+        self._curr_pos_m = self.board.cell_to_m(self._start_cell)
+        self._start_ms = cmd.timestamp
+
+    def update(self, now_ms: int):
+        return None
+
+    def can_capture(self) -> bool: 
+        return False
+
+    def is_movement_blocker(self) -> bool:
+        return True
+
+
+class MovePhysics(BasePhysics):
+
+    def __init__(self, board: Board, param: float = 1.0):
+        super().__init__(board, param)
+        self._speed_m_s = param
+
+    def reset(self, cmd: Command):
+        self._start_cell  = cmd.params[0]
+        self._end_cell  = cmd.params[1]
+        self._curr_pos_m = self.board.cell_to_m(self._start_cell)
+        self._start_ms  = cmd.timestamp
+        self._movement_vector = np.array(self.board.cell_to_m(self._end_cell) - self.board.cell_to_m(self._start_cell))
+        self._movement_vector_length = math.hypot(*self._movement_vector)
+        self._movement_vector = self._movement_vector / self._movement_vector_length
+        self._duration_s = self._movement_vector_length / self._speed_m_s
+
+    def update(self, now_ms: int):
+        seconds_passed = (now_ms - self._start_ms) / 1000
+        self._curr_pos_m = np.array(self.board.cell_to_m(self._start_cell)) + self._movement_vector * seconds_passed * self._speed_m_s
+        
+        if seconds_passed >= self._duration_s:
+            return Command(now_ms, None, "done", [])
+
+        return None
+
+    def get_pos_m(self):
+        return self._curr_pos_m
+
+    def get_pos_pix(self):
+        return super().get_pos_pix()
+
+class StaticTemporaryPhysics(BasePhysics):
+    def __init__(self, board: Board, param: float = 1.0):
+        super().__init__(board, param)
+        self.duration_s = param
+
+    def reset(self, cmd: Command):
+        self._end_cell = self._start_cell = cmd.params[0]
+        self._curr_pos_m = self.board.cell_to_m(self._start_cell)
+        self._start_ms = cmd.timestamp
+
+    def update(self, now_ms: int):
+        seconds_passed = (now_ms - self._start_ms) / 1000
+        if seconds_passed >= self.duration_s:
+            return Command(now_ms, None, "done", [])
+
+        return None
+
+class JumpPhysics(StaticTemporaryPhysics):
+    def can_be_captured(self) -> bool:
+        return False
+
+
+class RestPhysics(StaticTemporaryPhysics):
+    def can_capture(self) -> bool: return False
+    def is_movement_blocker(self) -> bool: return True
+
 

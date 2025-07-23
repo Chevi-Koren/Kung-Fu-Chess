@@ -45,7 +45,7 @@ def test_straight_uniform_motion():
     end_cell   = (6, 6)                         # B  (same diagonal)
 
     phys = Physics(start_cell, board)
-    cmd  = Command(0, "PA", "Move", [end_cell])   # timestamp 0 ms
+    cmd  = Command(0, "PA", "move", [end_cell])   # timestamp 0 ms
     phys.reset(cmd)
 
     # sample the trajectory every 30 ms (300 ms total in Physics.update)

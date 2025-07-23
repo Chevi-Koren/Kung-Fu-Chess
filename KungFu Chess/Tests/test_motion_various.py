@@ -21,7 +21,7 @@ CASES=[((1,1),(6,6)),((0,0),(0,7)),((7,7),(0,7)),((2,5),(5,2)),((3,0),(3,4))]
 @pytest.mark.parametrize("start_cell,end_cell",CASES,ids=[f"{s}->{e}" for s,e in CASES])
 def test_move_straight_and_uniform(start_cell,end_cell):
     phys=Physics(start_cell,DummyBoard())
-    phys.reset(Command(0,"P?","Move",[end_cell]))
+    phys.reset(Command(0,"P?","move",[end_cell]))
     samples=[]
     for t in range(0,301,30):
         phys.update(t); samples.append(np.array(phys.curr_px_f))

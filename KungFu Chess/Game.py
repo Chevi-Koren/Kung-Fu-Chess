@@ -21,8 +21,9 @@ class Game:
         self.board            = board
         self.START_NS         = time.monotonic_ns()
         self.user_input_queue = queue.Queue()          # thread-safe
-        # fast lookup tables ---------------------------------------------------
-        self.pos            : Dict[Tuple[int, int], Piece] = {}
+        
+        # lookup tables ---------------------------------------------------
+        self.pos            : Dict[Tuple[int, int], List[Piece]] = {}
         self.piece_by_id    : Dict[str, Piece] = {p.id: p for p in pieces}
 
         self.selected_id_1: Optional[str] = None
@@ -78,6 +79,11 @@ class Game:
         self.kb_prod_1.start()
         self.kb_prod_2.start()
 
+    def _update_cell2piece_map(self):
+        self.pos.clear()
+        for p in self.pieces:
+            self.pos[p.current_cell()].append(p)
+
     def run(self):
         self.start_user_input_thread()
         start_ms = self.game_time_ms()
@@ -86,11 +92,16 @@ class Game:
 
         while not self._is_win():
             now = self.game_time_ms()
+
             for p in self.pieces:
                 p.update(now)
+            
+            self._update_cell2piece_map()
+
             while not self.user_input_queue.empty():
                 cmd: Command = self.user_input_queue.get()
                 self._process_input(cmd)
+
             self._draw()
             self._show()
             self._resolve_collisions()
@@ -132,47 +143,35 @@ class Game:
     def _side_of(self, piece_id: str) -> str:
         return piece_id[1]
 
-    def _path_is_clear(self, a, b):
-        ar, ac = a; br, bc = b
-        dr = (br-ar) and ((br-ar)//abs(br-ar))
-        dc = (bc-ac) and ((bc-ac)//abs(bc-ac))
-        r, c = ar+dr, ac+dc
-        while (r,c) != (br,bc):
-            if (r,c) in self.pos: return False
-            r, c = r+dr, c+dc
-        return True
-
     def _process_input(self, cmd: Command):
         mover = self.piece_by_id.get(cmd.piece_id)
         if not mover:
             logger.debug("Unknown piece id %s", cmd.piece_id)
             return
 
-        now_ms = self.game_time_ms()
-        if not mover.state.can_transition(now_ms):
-            logger.debug("%s still in cooldown until %s ms", mover.id, mover.state.cooldown_end_ms)
-            return
-
-        if not mover.state.is_legal(mover, cmd, self.pos, self._path_is_clear):
-            mover.state.reset(Command(now_ms, mover.id, "Idle", []))
-            logger.info("Move rejected for %s to %s", mover.id, cmd.params[0])
-            return
-
-        nxt = mover.state.transitions.get(cmd.type, mover.state)
-        mover.state = nxt
-        mover.state.reset(cmd)
-        logger.info("%s performs %s to %s", mover.id, cmd.type, cmd.params[0])
+        mover.on_command(cmd, self.pos)
 
     def _resolve_collisions(self):
         occupied: Dict[Tuple[int,int], List[Piece]] = {}
         for p in self.pieces:
-            cell = p.current_cell()
-            occupied.setdefault(cell, []).append(p)
+            occupied.setdefault(p.current_cell(), []).append(p)
+
         for cell, plist in occupied.items():
-            if len(plist)<2: continue
-            winner = max(plist, key=lambda pc:pc.state.physics.start_ms)
+            if len(plist) < 2:
+                continue
+
+            # Choose the piece that most recently entered the square
+            winner = max(plist, key=lambda p: p.state.physics.get_start_ms())
+
+            if not winner.state.can_capture():
+                # If the winner cannot capture, no-one is removed – pieces coexist
+                continue
+
+            # Remove every other piece that *can be captured*
             for p in plist:
-                if p is not winner and p.state.physics.can_be_captured():
+                if p is winner:
+                    continue
+                if p.state.can_be_captured():
                     self.pieces.remove(p)
 
     def _validate(self, pieces: List[Piece]) -> bool:

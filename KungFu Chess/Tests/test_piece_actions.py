@@ -57,10 +57,10 @@ def build_piece(cell=(1, 1)):
     jump = State(jump_moves,  g, jump_phys);  jump.name = "jump"
 
     # transitions
-    idle.set_transition("Move",  move)
-    idle.set_transition("Jump",  jump)
-    move.set_transition("Arrived", idle)
-    jump.set_transition("Arrived", idle)
+    idle.set_transition("move",  move)
+    idle.set_transition("jump",  jump)
+    move.set_transition("done", idle)
+    jump.set_transition("done", idle)
 
     return Piece("PX_(1,1)", idle)
 
@@ -70,7 +70,7 @@ def test_jump_then_move_is_blocked_until_rest_finishes():
     src = (1, 1)
 
     # Issue a Jump
-    cmd_jump = Command(100, piece.id, "Jump", [src])
+    cmd_jump = Command(100, piece.id, "jump", [src])
     piece.on_command(cmd_jump, now_ms=100)
     assert piece.state.name == "jump"
 
@@ -84,12 +84,12 @@ def test_jump_then_move_is_blocked_until_rest_finishes():
     # Attempt Move during cooldown → still idle
     dest = (1, 2)
     t1 = arrive + 500
-    piece.on_command(Command(t1, piece.id, "Move", [dest]), now_ms=t1)
+    piece.on_command(Command(t1, piece.id, "move", [dest]), now_ms=t1)
     assert piece.state.name == "idle"
 
     # After cooldown expires, Move is accepted
     t2 = piece.state.cooldown_end_ms + 1
-    piece.on_command(Command(t2, piece.id, "Move", [dest]), now_ms=t2)
+    piece.on_command(Command(t2, piece.id, "move", [dest]), now_ms=t2)
     assert piece.state.name == "move"
 
 def test_move_completion_transitions_back_to_idle():
@@ -97,7 +97,7 @@ def test_move_completion_transitions_back_to_idle():
     dest = (1, 2)
 
     # Issue Move
-    piece.on_command(Command(0, piece.id, "Move", [dest]), now_ms=0)
+    piece.on_command(Command(0, piece.id, "move", [dest]), now_ms=0)
     assert piece.state.name == "move"
 
     # Advance past move arrival
@@ -109,7 +109,7 @@ def test_physics_traversal_is_linear_and_repeatable():
     board = DummyBoard(pix=10)
     phys = Physics((0,0), board)
     dest = (0, 1)
-    phys.reset(Command(0, "X", "Move", [dest]))
+    phys.reset(Command(0, "X", "move", [dest]))
 
     # ensure duration_ms is int
     dur = int(phys.duration_ms)
@@ -130,11 +130,11 @@ def test_cooldown_blocks_reentry_until_arrival():
     dest = (1, 2)
 
     # First Move
-    piece.on_command(Command(0, piece.id, "Move", [dest]), now_ms=0)
+    piece.on_command(Command(0, piece.id, "move", [dest]), now_ms=0)
     assert piece.state.name == "move"
 
     # Try a second Move _before_ arrival → still in 'move'
-    piece.on_command(Command(50, piece.id, "Move", [dest]), now_ms=50)
+    piece.on_command(Command(50, piece.id, "move", [dest]), now_ms=50)
     assert piece.state.name == "move"
 
     # Now advance past arrival
@@ -144,5 +144,5 @@ def test_cooldown_blocks_reentry_until_arrival():
 
     # After arrival+cooldown, Move should be accepted again
     ok = piece.state.cooldown_end_ms + 1
-    piece.on_command(Command(ok, piece.id, "Move", [dest]), now_ms=ok)
+    piece.on_command(Command(ok, piece.id, "move", [dest]), now_ms=ok)
     assert piece.state.name == "move"

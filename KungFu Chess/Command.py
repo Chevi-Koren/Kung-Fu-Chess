@@ -5,5 +5,5 @@ from typing import List, Dict, Tuple, Optional
 class Command:
     timestamp: int          # ms since game start
     piece_id: str
-    type: str               # "Move" | "Jump" | …
+    type: str               # "move" | "jump" | …
     params: List            # payload (e.g. ["e2", "e4"])

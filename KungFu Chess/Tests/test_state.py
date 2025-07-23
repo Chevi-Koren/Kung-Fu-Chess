@@ -24,14 +24,14 @@ def make_state():
 
 def test_reset_sets_cooldown_move():
     st=make_state()
-    cmd=Command(1000,"X","Move",[(1,1)])
+    cmd=Command(1000,"X","move",[(1,1)])
     st.reset(cmd)
-    # cooldown is armed only after Arrived – should be 0 right after reset
+    # cooldown is armed only after done – should be 0 right after reset
     assert st.cooldown_end_ms==0
 
 def test_reset_sets_cooldown_jump():
     st=make_state()
-    cmd=Command(2000,"X","Jump",[(0,0)])
+    cmd=Command(2000,"X","jump",[(0,0)])
     st.reset(cmd)
     assert st.cooldown_end_ms==0
 
@@ -45,13 +45,13 @@ def test_can_transition_false():
 
 def test_get_state_after_command_transitions_if_allowed():
     st1=make_state(); st2=make_state()
-    st1.set_transition("Move",st2)
-    cmd=Command(0,"X","Move",[(1,1)])
+    st1.set_transition("move",st2)
+    cmd=Command(0,"X","move",[(1,1)])
     nxt=st1.get_state_after_command(cmd,now_ms=0)
     assert nxt is st2
 
 def test_get_state_after_command_no_transition():
     st = make_state()
-    cmd = Command(0, "X", "Move", [(1, 1)])
+    cmd = Command(0, "X", "move", [(1, 1)])
     nxt = st.get_state_after_command(cmd, now_ms=0)
     assert nxt is st                      # stays in same state

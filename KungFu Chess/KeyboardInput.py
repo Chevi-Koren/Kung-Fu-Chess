@@ -67,7 +67,7 @@ class KeyboardProducer(threading.Thread):
 
     def _find_piece_at(self, cell):
         for p in self.game.pieces:
-            if p.state.physics.start_cell == cell:
+            if p.current_cell() == cell:
                 return p
         return None
 
@@ -95,7 +95,7 @@ class KeyboardProducer(threading.Thread):
 
             else:
                 # second press = issue the command
-                cmd_type = "Jump" if action == "jump" else "Move"
+                cmd_type = "jump" if action == "jump" else "move"
                 cmd = Command(
                     self.game.game_time_ms(),
                     selected,

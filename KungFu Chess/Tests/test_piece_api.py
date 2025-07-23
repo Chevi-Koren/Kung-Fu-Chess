@@ -26,7 +26,7 @@ def test_current_cell_accessor():
     p=Piece("PX",st)
     assert p.current_cell()==(2,3)
     # after issuing a Move, current_cell is still original until arrival
-    cmd=Command(0,"PX","Move",[(4,5)])
+    cmd=Command(0,"PX","move",[(4,5)])
     st.reset(cmd)
     assert p.current_cell()==(2,3)
 

@@ -1,6 +1,7 @@
 # PieceFactory.py
 from __future__ import annotations
 import csv, json, pathlib
+from plistlib import InvalidFileException
 from typing import Dict, Tuple
 
 from Board           import Board
@@ -16,6 +17,7 @@ class PieceFactory:
                  board: Board,
                  graphics_factory=None,
                  physics_factory=None):
+                 
         self.board            = board
         self.graphics_factory = graphics_factory or GraphicsFactory()
         self.physics_factory  = physics_factory or PhysicsFactory(board)
@@ -26,16 +28,15 @@ class PieceFactory:
     def _load_master_csv(self, pieces_root: pathlib.Path) -> None:
         if self._global_trans:                     # already read
             return
-        csv_path = pieces_root.parent / "state_transitions.csv"
+        csv_path = pieces_root / "transitions.csv"
         if not csv_path.exists():
-            print("[WARN] state_transitions.csv not found; using defaults")
-            return
+            raise InvalidFileException("[WARN] transitions.csv not found")
+
         with csv_path.open(newline="", encoding="utf-8") as f:
             rdr = csv.DictReader(f)
-            for row in rdr:                        # from_state,event,to_state
+            for row in rdr:
                 frm, ev, nxt = row["from_state"], row["event"], row["to_state"]
                 self._global_trans.setdefault(frm, {})[ev] = nxt
-        print(f"[LOAD] global transitions from {csv_path}")
 
     # ──────────────────────────────────────────────────────────────
     def generate_library(self, pieces_root: pathlib.Path) -> None:
@@ -51,12 +52,8 @@ class PieceFactory:
 
         states: Dict[str, State] = {}
 
-        # optional piece‑wide moves.txt
-        common_moves = None
-        cm_path = piece_dir / "moves.txt"
-        if cm_path.exists():
-            common_moves = Moves(cm_path, board_size)
-
+        # There is no longer a piece-wide fall-back. Each state must provide its own
+        # `moves.txt`; if it does not, the state will have *no* legal moves.
         # ── load every <piece>/states/<state>/ ───────────────────
         for state_dir in (piece_dir / "states").iterdir():
             if not state_dir.is_dir():
@@ -66,19 +63,15 @@ class PieceFactory:
             cfg_path = state_dir / "config.json"
             cfg = json.loads(cfg_path.read_text()) if cfg_path.exists() else {}
 
-            moves    = common_moves or Moves(state_dir / "moves.txt", board_size)
+            moves_path = state_dir / "moves.txt"
+            moves = Moves(moves_path, board_size) if moves_path.exists() else None
             graphics = self.graphics_factory.load(state_dir / "sprites",
                                                   cfg.get("graphics", {}), cell_px)
-            physics  = self.physics_factory.create((0, 0), cfg.get("physics", {}))
+            physics  = self.physics_factory.create((0, 0), name, cfg.get("physics", {}))
 
             st = State(moves, graphics, physics)
             st.name = name
             states[name] = st
-
-        # default external transitions
-        for st in states.values():
-            if "move" in states: st.set_transition("Move",  states["move"])
-            if "jump" in states: st.set_transition("Jump",  states["jump"])
 
         # apply master CSV overrides
         for frm, ev_map in self._global_trans.items():
@@ -87,63 +80,29 @@ class PieceFactory:
                 continue
             for ev, nxt in ev_map.items():
                 dst = states.get(nxt)
-                if dst:
-                    src.set_transition(ev, dst)
+                if not dst:
+                    continue
 
-        # pawn: add first‑move chain
-        if piece_dir.name.startswith("P"):
-            self._pawn_first_move(states)
+                src.set_transition(ev, dst)
 
-        # pawn starts in first_idle, others in idle
-        return (states.get("first_idle")
-                or states.get("idle")
-                or next(iter(states.values())))
-
-    # ──────────────────────────────────────────────────────────────
-    def _pawn_first_move(self, states: Dict[str, State]) -> None:
-        """
-        Inject two transient states so a pawn can do the one‑time double step.
-
-            first_idle --Move--> first_move --Arrived--> idle
-        """
-        if "first_idle" in states or "idle" not in states or "move" not in states:
-            return
-
-        idle = states["idle"]
-        move = states["move"]
-
-        # clone idle → first_idle
-        first_idle = State(idle.moves, idle.graphics.copy(), idle.physics)
-        first_idle.name = "first_idle"
-        states["first_idle"] = first_idle
-
-        # clone move → first_move
-        first_move = State(move.moves, move.graphics.copy(), move.physics)
-        first_move.name = "first_move"
-        states["first_move"] = first_move
-
-        # wiring
-        first_idle.set_transition("Move", first_move)  # first move can use ±2
-        first_move.set_transition("Arrived", idle)  # ALWAYS drop to idle
-
-        print(first_move.name)
+        # always start at idle
+        return states.get("idle")
 
     # ──────────────────────────────────────────────────────────────
     def create_piece(self, p_type: str, cell: Tuple[int, int]) -> Piece:
         template_idle = self.templates[p_type]
 
-        # share ONE physics object per piece instance
-        shared_phys = self.physics_factory.create(cell, {})
-
+        # Each state will have its own physics object; no shared instance.
         clone_map: Dict[State, State] = {}
         stack = [template_idle]
         while stack:
             orig = stack.pop()
             if orig in clone_map:
                 continue
+            new_phys = self.physics_factory.create(cell, orig.name, {})
             clone = State(orig.moves,
                           orig.graphics.copy(),
-                          shared_phys)
+                          new_phys)
             clone.name = orig.name
             clone_map[orig] = clone
             stack.extend(orig.transitions.values())

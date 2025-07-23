@@ -22,10 +22,10 @@ def test_init_sets_start_and_end_cell():
 def test_reset_with_jump():
     board = MockBoard()
     p = Physics((1, 1), board)
-    cmd = Command(timestamp=1000, piece_id="P1", type="Jump", params=[(3, 4)])
+    cmd = Command(timestamp=1000, piece_id="P1", type="jump", params=[(3, 4)])
     p.reset(cmd)
 
-    assert p.mode == "Jump"
+    assert p.mode == "jump"
     assert p.start_cell == (1, 1)
     assert p.end_cell == (3, 4)
     assert p.start_ms == 1000
@@ -44,7 +44,7 @@ def test_reset_idle_does_not_change_position():
 def test_update_jump_and_arrival():
     board = MockBoard()
     p = Physics((0, 0), board)
-    cmd = Command(timestamp=0, piece_id="P1", type="Jump", params=[(1, 1)])
+    cmd = Command(timestamp=0, piece_id="P1", type="jump", params=[(1, 1)])
     p.reset(cmd)
 
     # halfway jump (t = 0.5)
@@ -57,7 +57,7 @@ def test_update_jump_and_arrival():
     # complete jump
     result = p.update(400)
     assert isinstance(result, Command)
-    assert result.type == "Arrived"
+    assert result.type == "done"
     assert p.start_cell == p.end_cell
 
 

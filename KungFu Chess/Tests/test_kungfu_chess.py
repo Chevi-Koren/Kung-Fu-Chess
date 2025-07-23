@@ -40,18 +40,18 @@ def test_moves_within_bounds(board):
 # ─── State cooldowns (new impl sets 0) ----------------------------------
 def test_state_cooldown_move(board):
     st = make_piece("P",(0,0),[],board).state
-    st.reset(Command(1000,"P","Move",[(1,1)]))
+    st.reset(Command(1000,"P","move",[(1,1)]))
     assert st.cooldown_end_ms == 0
 
 def test_state_cooldown_jump(board):
     st = make_piece("P",(0,0),[],board).state
-    st.reset(Command(2000,"P","Jump",[(0,0)]))
+    st.reset(Command(2000,"P","jump",[(0,0)]))
     assert st.cooldown_end_ms == 0
 
 # ─── Physics basics -----------------------------------------------------
 def test_physics_reset_updates_cells(board):
     phys = Physics((2,3), board)
-    phys.reset(Command(1500,"X","Move",[(5,6)]))
+    phys.reset(Command(1500,"X","move",[(5,6)]))
     assert phys.end_cell == (5,6)
 
 # only the three tests that failed were rewritten; others kept intact
@@ -62,7 +62,7 @@ def test_capture_latest_wins(board, monkeypatch):
     p1, p2 = make_piece("A",(0,0),[],board),   make_piece("B",(0,2),[],board)
 
     for piece, ts in ((p1,100), (p2,200)):
-        piece.state.reset(Command(ts, piece.id, "Move", [(1,1)]))
+        piece.state.reset(Command(ts, piece.id, "move", [(1,1)]))
         piece.state.physics.start_cell = (1,1)
 
     # bypass validation – we’re unit‑testing capture only
@@ -78,7 +78,7 @@ def test_jump_moves_update_physics(board, monkeypatch):
     monkeypatch.setattr(Game, "_validate", lambda *_: True)
     g = Game([jumper,kw,kb], board)
 
-    cmd = Command(0, jumper.id, "Jump", [(5,3)])
+    cmd = Command(0, jumper.id, "jump", [(5,3)])
     g._process_input(cmd)
 
     # simulate time so Physics reaches destination
