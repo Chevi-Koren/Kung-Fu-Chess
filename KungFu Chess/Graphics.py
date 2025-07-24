@@ -13,17 +13,13 @@ class Graphics:
                  cell_size: tuple[int, int],
                  loop: bool = True,
                  fps: float = 6.0):
+                 
         self.frames: list[Img] = self._load_sprites(sprites_folder, cell_size)
         self.loop, self.fps = loop, fps
         self.start_ms = 0
         self.cur_frame = 0
         self.frame_duration_ms = 1000 / fps
         print(f"[LOAD] Graphics from: {sprites_folder}")
-
-    @staticmethod
-    def _now_ms():
-        import time
-        return int(time.time() * 1000)
 
     def copy(self):
         # shallow copy is enough: frames list is immutable PNGs
@@ -34,15 +30,9 @@ class Graphics:
         for p in sorted(folder.glob("*.png")):
             frames.append(Img().read(p, size=cell_size, keep_aspect=True))
         if not frames:
-            import numpy as np
-            width, height = cell_size
+            raise ValueError(f"No frames found in {folder}")
 
-            blank = np.zeros((height, width, 4), dtype=np.uint8)
-            img = Img()
-            img.img = blank      # force a real H×W×4 array
-            frames.append(img)
         return frames
-
 
     def reset(self, cmd: Command):
         self.start_ms = cmd.timestamp
@@ -57,8 +47,6 @@ class Graphics:
             self.cur_frame = min(frames_passed, len(self.frames) - 1)
 
     def get_img(self) -> Img:
-        if not self.frames:
-            raise ValueError("No frames loaded for animation.")
         return self.frames[self.cur_frame]
 
 

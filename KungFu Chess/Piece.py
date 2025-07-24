@@ -12,7 +12,8 @@ class Piece:
         self.state = init_state
 
     def on_command(self, cmd: Command, cell2piece: Dict[Tuple[int, int], List[Piece]]):
-        self.state = self.state.get_state_after_command(cmd, cell2piece)
+        """Process a command and potentially transition to a new state."""
+        self.state = self.state.on_command(cmd, cell2piece)
 
     def reset(self, start_ms: int):
         self.state.reset(Command(start_ms, self.id, "Idle", []))

@@ -5,6 +5,7 @@ from plistlib import InvalidFileException
 from typing import Dict, Tuple
 
 from Board           import Board
+from Command         import Command
 from GraphicsFactory import GraphicsFactory
 from Moves           import Moves
 from PhysicsFactory  import PhysicsFactory
@@ -30,7 +31,7 @@ class PieceFactory:
             return
         csv_path = pieces_root / "transitions.csv"
         if not csv_path.exists():
-            raise InvalidFileException("[WARN] transitions.csv not found")
+            return
 
         with csv_path.open(newline="", encoding="utf-8") as f:
             rdr = csv.DictReader(f)
@@ -112,4 +113,7 @@ class PieceFactory:
             for ev, target in orig.transitions.items():
                 clone.set_transition(ev, clone_map[target])
 
-        return Piece(f"{p_type}_{cell}", clone_map[template_idle])
+        piece = Piece(f"{p_type}_{cell}", clone_map[template_idle])
+        # initialise physics position
+        piece.state.reset(Command(0, piece.id, "idle", [cell]))
+        return piece

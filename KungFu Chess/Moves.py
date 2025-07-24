@@ -14,9 +14,31 @@ class Moves:
         dr,dc:non_capture   # non-capture move only
         dr,dc:capture       # capture move only (e.g. pawn diagonal)
     """
-    def __init__(self, txt_path: pathlib.Path, dims: Tuple[int, int]):
-        self.rel_moves: List[Tuple[int,int,int]] = self._load_moves(txt_path)
-        self.W, self.H = dims
+    def __init__(self, moves_file: pathlib.Path, dims: Tuple[int, int]):
+        """Load moves from a text file.
+        
+        Args:
+            moves_file: Path to moves.txt file
+            dims: Board dimensions (rows, cols)
+        """
+        self.dims = dims
+        self.moves = {}  # (dr, dc) -> tag
+        
+        if not moves_file.exists():
+            return
+        
+        with moves_file.open() as f:
+            for line in f:
+                line = line.strip()
+                if not line or line.startswith("#"):
+                    continue
+                
+                # Parse "dr,dc:tag" format
+                move, *tag = line.split("#")[0].split(":")
+                dr, dc = map(int, move.strip().split(","))
+                tag = tag[0].strip() if tag else ""
+                
+                self.moves[(dr, dc)] = tag
 
     def _load_moves(self, fp: pathlib.Path) -> List[Tuple[int,int,int]]:
         moves: List[Tuple[int,int,int]] = []
@@ -44,51 +66,58 @@ class Moves:
         return dr, dc, tag
 
     def is_dst_cell_valid(self, dr, dc, dst_has_piece):
-        for move in self.rel_moves:
-            if move[0] == dr and move[1] == dc:
-                tag = move[2]
-                if tag == -1: # "can both"
-                    return True
-                elif tag == _NON_CAPTURE:
-                    return not dst_has_piece
-                elif tag == _CAPTURE:
-                    return dst_has_piece
-                else:
-                    raise ValueError(f"Invalid move tag: {tag}")
-        return False
-    
-    def _path_is_clear(self, src, dst, cell2piece):
-        import numpy as np
+        """Check if a move is valid based on the destination cell state."""
+        # If the relative move isn't in the table – it's invalid
+        if (dr, dc) not in self.moves:
+            return False
 
-        # Get cell size in meters (assuming square cells)
-        cell_H = self.board.cell_H_m
-        cell_W = self.board.cell_W_m
-        step_size = min(cell_H, cell_W) / 2
-
-        src = np.array(src, dtype=float)
-        dst = np.array(dst, dtype=float)
-        direction = dst - src
-        distance = np.linalg.norm(direction)
-        if distance == 0:
+        move_tag = self.moves[(dr, dc)]
+        if move_tag == "":  # No tag = can both capture/non-capture
             return True
-        direction_unit = direction / distance
-
-        num_steps = int(distance / step_size)
-        for i in range(1, num_steps + 1):
-            pos = src + direction_unit * step_size * i
-            cell = self.board.m_to_cell(tuple(pos))
-            if cell in cell2piece and cell2piece[cell].is_movement_blocker():
-                return False
-        return True
-
+        
+        if move_tag == "capture":
+            return dst_has_piece
+        
+        if move_tag == "non_capture":
+            return not dst_has_piece
+        
+        return False  # Invalid tag
+    
     def is_valid(self, src_cell, dst_cell, cell2piece):
+        # Check board boundaries
+        if not (0 <= dst_cell[0] < self.dims[0] and 0 <= dst_cell[1] < self.dims[1]):
+            return False
+        
         dr, dc = dst_cell[0] - src_cell[0], dst_cell[1] - src_cell[1]
         dst_has_piece = cell2piece.get(dst_cell) is not None
         if not self.is_dst_cell_valid(dr, dc, dst_has_piece):
             return False
         
-        if not self._path_is_clear(src_cell, dst_cell):
+        if not self._path_is_clear(src_cell, dst_cell, cell2piece):
             return False
+        
+        return True
+
+    def _path_is_clear(self, src_cell, dst_cell, cell2piece):
+        """Check if there are any pieces blocking the path between src and dst."""
+        dr = dst_cell[0] - src_cell[0]
+        dc = dst_cell[1] - src_cell[1]
+        
+        # No need to check path for adjacent cells
+        if abs(dr) <= 1 and abs(dc) <= 1:
+            return True
+        
+        # Get unit vector for movement direction
+        steps = max(abs(dr), abs(dc))
+        step_r = dr / steps
+        step_c = dc / steps
+        
+        # Check each cell along the path (excluding src and dst)
+        for i in range(1, steps):
+            r = src_cell[0] + int(i * step_r)
+            c = src_cell[1] + int(i * step_c)
+            if (r, c) in cell2piece:
+                return False
         
         return True
 

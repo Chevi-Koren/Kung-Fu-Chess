@@ -1,5 +1,5 @@
 from Board import Board
-from Physics import IdlePhysics, MovePhysics, JumpPhysics, RestPhysics, Physics
+from Physics import IdlePhysics, MovePhysics, JumpPhysics, RestPhysics, BasePhysics
 
 
 class PhysicsFactory:
@@ -8,7 +8,7 @@ class PhysicsFactory:
     def __init__(self, board: Board):
         self.board = board
 
-    def create(self, start_cell, state_name: str, cfg) -> Physics:
+    def create(self, start_cell, state_name: str, cfg) -> BasePhysics:
         speed = cfg.get("speed_m_per_sec", 0.0)
 
         name_l = state_name.lower()
@@ -23,6 +23,7 @@ class PhysicsFactory:
 
         if cls is RestPhysics:
             duration_ms = cfg.get("duration_ms", 3000)
-            return cls(start_cell, self.board, duration_ms)  # type: ignore[arg-type]
+            return cls(self.board, duration_ms / 1000)  # duration in seconds
 
-        return cls(start_cell, self.board, speed)
+        # For other physics classes param is speed/duration
+        return cls(self.board, speed)

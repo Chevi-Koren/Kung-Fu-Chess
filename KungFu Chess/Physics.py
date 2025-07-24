@@ -80,7 +80,9 @@ class MovePhysics(BasePhysics):
         self._end_cell  = cmd.params[1]
         self._curr_pos_m = self.board.cell_to_m(self._start_cell)
         self._start_ms  = cmd.timestamp
-        self._movement_vector = np.array(self.board.cell_to_m(self._end_cell) - self.board.cell_to_m(self._start_cell))
+        start_pos = np.array(self.board.cell_to_m(self._start_cell))
+        end_pos = np.array(self.board.cell_to_m(self._end_cell))
+        self._movement_vector = end_pos - start_pos
         self._movement_vector_length = math.hypot(*self._movement_vector)
         self._movement_vector = self._movement_vector / self._movement_vector_length
         self._duration_s = self._movement_vector_length / self._speed_m_s

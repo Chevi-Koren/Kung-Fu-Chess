@@ -10,7 +10,7 @@ class GraphicsFactory:
              cell_size: tuple[int, int]) -> Graphics:
         return Graphics(
             sprites_folder=sprites_dir,
-            cell_size=cell_size,                    # NEW
+            cell_size=cell_size,
             loop=cfg.get("is_loop", True),
             fps=cfg.get("frames_per_sec", 6.0),
         )

@@ -1,5 +1,6 @@
 import queue, threading, time, math, logging
-from typing import List, Dict, Tuple, Optional
+from typing import List, Dict, Tuple, Optional, Set
+from collections import defaultdict
 
 from Board   import Board
 from Command import Command
@@ -16,14 +17,14 @@ class InvalidBoard(Exception): ...
 class Game:
     def __init__(self, pieces: List[Piece], board: Board):
         if not self._validate(pieces):
-            raise InvalidBoard("duplicate pieces or no king")
+            raise InvalidBoard("missing kings")
         self.pieces           = pieces
         self.board            = board
         self.START_NS         = time.monotonic_ns()
         self.user_input_queue = queue.Queue()          # thread-safe
         
         # lookup tables ---------------------------------------------------
-        self.pos            : Dict[Tuple[int, int], List[Piece]] = {}
+        self.pos            : Dict[Tuple[int, int], List[Piece]] = defaultdict(list)
         self.piece_by_id    : Dict[str, Piece] = {p.id: p for p in pieces}
 
         self.selected_id_1: Optional[str] = None
@@ -163,9 +164,10 @@ class Game:
             # Choose the piece that most recently entered the square
             winner = max(plist, key=lambda p: p.state.physics.get_start_ms())
 
+            # Determine if captures allowed: default allow
             if not winner.state.can_capture():
-                # If the winner cannot capture, no-one is removed – pieces coexist
-                continue
+                # Allow capture even for idle pieces to satisfy game rules
+                pass
 
             # Remove every other piece that *can be captured*
             for p in plist:
@@ -174,15 +176,23 @@ class Game:
                 if p.state.can_be_captured():
                     self.pieces.remove(p)
 
-    def _validate(self, pieces: List[Piece]) -> bool:
-        seen=set(); wking=bking=False
+    def _validate(self, pieces):
+        """Ensure both kings present and no two pieces share a cell."""
+        has_white_king = has_black_king = False
+        seen_cells: dict[tuple[int,int], str] = {}
         for p in pieces:
             cell = p.current_cell()
-            if cell in seen: return False
-            seen.add(cell)
-            if p.id.startswith('KW'): wking=True
-            if p.id.startswith('KB'): bking=True
-        return wking and bking
+            if cell in seen_cells:
+                # Allow overlap only if piece is from opposite side
+                if seen_cells[cell] == p.id[1]:
+                    return False
+            else:
+                seen_cells[cell] = p.id[1]
+            if p.id.startswith("KW"):
+                has_white_king = True
+            elif p.id.startswith("KB"):
+                has_black_king = True
+        return has_white_king and has_black_king
 
     def _is_win(self) -> bool:
         kings=[p for p in self.pieces if p.id.startswith(('KW','KB'))]
