@@ -36,8 +36,12 @@ set(OPENCV_INCLUDE_DIR "${OPENCV_DIR}/include")
 set(OPENCV_LIB_DIR "${OPENCV_DIR}/bin")
 
 # Include directories (apply to both lib & exe)
-target_include_directories(kungfu_chess_lib PRIVATE ${OPENCV_INCLUDE_DIR})
-target_include_directories(${PROJECT_NAME}   PRIVATE ${OPENCV_INCLUDE_DIR})
+target_include_directories(kungfu_chess_lib PRIVATE
+    ${OPENCV_INCLUDE_DIR}
+    ${CMAKE_CURRENT_SOURCE_DIR}/extern)
+target_include_directories(${PROJECT_NAME}   PRIVATE
+    ${OPENCV_INCLUDE_DIR}
+    ${CMAKE_CURRENT_SOURCE_DIR}/extern)
 
 target_link_directories(kungfu_chess_lib PRIVATE ${OPENCV_LIB_DIR})
 target_link_directories(${PROJECT_NAME}   PRIVATE ${OPENCV_LIB_DIR})
@@ -71,15 +75,6 @@ option(KFC_BUILD_TESTS "Build doctest-based unit tests" ON)
 # Fetch third-party single-header libraries
 # ---------------------------------------------------------------------
 include(FetchContent)
-
-# doctest (unit-testing)
-FetchContent_Declare(
-    doctest
-    GIT_REPOSITORY https://github.com/doctest/doctest.git
-    GIT_TAG v2.4.11
-    SOURCE_SUBDIR .
-)
-FetchContent_MakeAvailable(doctest)
 
 # nlohmann/json (header-only)
 FetchContent_Declare(
@@ -121,7 +116,6 @@ if(KFC_BUILD_TESTS)
     # Link against main library/executable and third-party headers
     target_link_libraries(kungfu_chess_tests PRIVATE
         kungfu_chess_lib
-        doctest::doctest
         nlohmann_json::nlohmann_json)
 
     # Enable CTest integration so `ctest` can run the suite
