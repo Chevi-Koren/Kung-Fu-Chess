@@ -1,24 +1,24 @@
 import pathlib, numpy as np
 
 from Board import Board
-from img import Img
+from mock_img import MockImg
 from PhysicsFactory import PhysicsFactory
 from Physics import IdlePhysics, MovePhysics, JumpPhysics, RestPhysics
 from PieceFactory import PieceFactory
 from GraphicsFactory import GraphicsFactory, MockImgFactory
 
+
 # ---------------------------------------------------------------------------
 #                               HELPERS
 # ---------------------------------------------------------------------------
 
-def _blank_img(w: int = 256, h: int = 256):
-    img = Img()
-    img.img = np.zeros((h, w, 4), dtype=np.uint8)
-    return img
-
-
 def _board():
-    return Board(cell_H_pix=32, cell_W_pix=32, W_cells=8, H_cells=8, img=_blank_img())
+    return Board(cell_H_pix=32, cell_W_pix=32, W_cells=8, H_cells=8, img=MockImg())
+
+
+ROOT_DIR = pathlib.Path(__file__).parent.parent
+PIECES_DIR = ROOT_DIR / "pieces"
+
 
 # ---------------------------------------------------------------------------
 #                          PHYSICS FACTORY TESTS
@@ -50,24 +50,27 @@ def test_physics_factory_creates_correct_subclasses():
 #                          PIECE FACTORY TESTS
 # ---------------------------------------------------------------------------
 
-def test_piece_factory_generates_and_creates_pieces():
+def test_piece_factory_generates_all_pieces():
     board = _board()
     gfx_factory = GraphicsFactory(MockImgFactory())
-    pieces_root = pathlib.Path(__file__).parent.parent / "pieces"
-    # Ensure library generation does not raise
-    p_factory = PieceFactory(board, pieces_root=pieces_root, graphics_factory=gfx_factory)
-
-    pawn = p_factory.create_piece("PW", (6, 0))
-    assert pawn.id.startswith("PW_")
-    assert pawn.current_cell() == (6, 0)
-    assert pawn.state.name == "idle"
-
- 
-    # Create another piece type (e.g., King Black) and verify
-    king = p_factory.create_piece("KB", (0, 4))
-    assert king.id.startswith("KB_")
-    assert king.current_cell() == (0, 4)
-
-    # Ensure different instances (no shared state objects)
-    assert king is not pawn
-    assert king.state is not pawn.state 
+    p_factory = PieceFactory(board, pieces_root=PIECES_DIR, graphics_factory=gfx_factory)
+    i = 0
+    j = 0
+    piece_ids = set()
+    piece_types = ["B", "K", "P", "Q", "R"]
+    piece_colors = ["W", "B"]
+    num_pieces_created = 0
+    for piece_type in piece_types:
+        for piece_color in piece_colors:
+            piece_type_name = piece_type + piece_color
+            loc = (i, j)
+            curr_p = p_factory.create_piece(piece_type_name, loc)
+            assert curr_p.id.startswith(piece_type_name + "_")
+            assert curr_p.current_cell() == loc
+            piece_ids.add(curr_p.id)
+            num_pieces_created += 1
+            i += 1
+            if i >= board.W_cells:
+                i = 0
+                j += 1
+    assert len(piece_ids) == num_pieces_created

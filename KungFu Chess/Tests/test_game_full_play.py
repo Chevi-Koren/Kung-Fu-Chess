@@ -1,9 +1,6 @@
 import pathlib, time
 
-from Board import Board
-from img import Img
-from PieceFactory import PieceFactory
-from GraphicsFactory import GraphicsFactory, MockImgFactory
+from GraphicsFactory import MockImgFactory
 from Game import Game
 from Command import Command
 from GameFactory import create_game
@@ -16,18 +13,14 @@ PIECES_ROOT = pathlib.Path(__file__).parent.parent / "pieces"
 BOARD_CSV = PIECES_ROOT / "board.csv"
 
 
-def _blank_board():
-    cell_px = 32
-    img = Img();
-    img.img = np.zeros((cell_px * 8, cell_px * 8, 4), dtype=np.uint8)
-    return Board(cell_px, cell_px, 8, 8, img)
+# ---------------------------------------------------------------------------
+#                          GAMEPLAY TESTS
+# ---------------------------------------------------------------------------
 
 
-# interface image_loader
-# real_loader: image_loader
-# fake_loader: image_loader
 
-def test_game_move_and_capture():
+
+def test_gameplay_pawn_move_and_capture():
     game = create_game("../pieces", MockImgFactory())
     game._time_factor = 1000000000
     game._update_cell2piece_map()
