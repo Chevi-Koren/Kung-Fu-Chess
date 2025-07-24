@@ -53,11 +53,9 @@ def test_physics_factory_creates_correct_subclasses():
 def test_piece_factory_generates_and_creates_pieces():
     board = _board()
     gfx_factory = GraphicsFactory(MockImgFactory())
-    p_factory = PieceFactory(board, graphics_factory=gfx_factory)
-
     pieces_root = pathlib.Path(__file__).parent.parent / "pieces"
     # Ensure library generation does not raise
-    p_factory.generate_library(pieces_root)
+    p_factory = PieceFactory(board, pieces_root=pieces_root, graphics_factory=gfx_factory)
 
     pawn = p_factory.create_piece("PW", (6, 0))
     assert pawn.id.startswith("PW_")

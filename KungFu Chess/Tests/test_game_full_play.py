@@ -25,8 +25,7 @@ def _blank_board():
 def _load_game() -> Game:
     board = _blank_board()
     gfx_factory = GraphicsFactory(MockImgFactory())
-    pf = PieceFactory(board, graphics_factory=gfx_factory)
-    pf.generate_library(PIECES_ROOT)
+    pf = PieceFactory(board, PIECES_ROOT, graphics_factory=gfx_factory)
     pieces = []
     with BOARD_CSV.open() as f:
         for r, line in enumerate(f):
