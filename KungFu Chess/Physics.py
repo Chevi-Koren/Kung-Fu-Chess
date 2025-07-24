@@ -53,10 +53,6 @@ class BasePhysics(ABC):  # Interface/base class
     def is_movement_blocker(self) -> bool: return False
 
 
-# ──────────────────────────────────────────────────────────────────────────
-#  Concrete implementations
-# ──────────────────────────────────────────────────────────────────────────
-
 class IdlePhysics(BasePhysics):
 
     def reset(self, cmd: Command):
@@ -72,7 +68,6 @@ class IdlePhysics(BasePhysics):
 
     def is_movement_blocker(self) -> bool:
         return True
-
 
 class MovePhysics(BasePhysics):
 

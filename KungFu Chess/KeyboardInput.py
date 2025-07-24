@@ -58,7 +58,9 @@ class KeyboardProducer(threading.Thread):
         self.game = game
         self.queue = queue
         self.proc = processor
-        self.player = player  # 1 or 2
+        self.player = player
+        self.selected_id = None
+        self.selected_cell = None
 
     def run(self):
         # Install our hook; it stays active until we call keyboard.unhook_all()
@@ -74,37 +76,36 @@ class KeyboardProducer(threading.Thread):
     def _on_event(self, event):
         action = self.proc.process_key(event)
         # only interpret select/jump
-        if action in ("select", "jump"):
-            cell = self.proc.get_cursor()
-            # read/write the correct selected_id_X on the Game
-            sel_attr = f"selected_id_{self.player}"
-            selected = getattr(self.game, sel_attr)
+        if action not in ("select", "jump"):
+            return
+        
+        cell = self.proc.get_cursor()
+        # read/write the correct selected_id_X on the Game
+        if action == "select" and self.selected_id is None:
+            # first press = pick up the piece under the cursor
+            piece = self._find_piece_at(cell)
 
-            if selected is None:
-                # first press = pick up the piece under the cursor
-                #piece = self.game.pos.get(cell)
-                piece = self._find_piece_at(cell)
-
-                if piece:
-                    # *optionally* only allow selection of that player's color:
-                    #   if piece.id[1] == ("W" if self.player == 1 else "B"):
-                    setattr(self.game, sel_attr, piece.id)
-                    print(f"[KEY] Player{self.player} selected {piece.id} at {cell}")
-                else:
-                    print(f"[WARN] No piece at {cell}")
-
+            if piece:
+                # *optionally* only allow selection of that player's color:
+                #   if piece.id[1] == ("W" if self.player == 1 else "B"):
+                self.selected_id = piece.id
+                self.selected_cell = cell
+                print(f"[KEY] Player{self.player} selected {piece.id} at {cell}")
             else:
-                # second press = issue the command
-                cmd_type = "jump" if action == "jump" else "move"
-                cmd = Command(
-                    self.game.game_time_ms(),
-                    selected,
-                    cmd_type,
-                    [cell]
-                )
-                self.queue.put(cmd)
-                logger.info("Player%s queued %s of %s → %s at %s", self.player, cmd_type, selected, cell, cmd.timestamp)
-                setattr(self.game, sel_attr, None)
+                print(f"[WARN] No piece at {cell}")
+
+        elif self.selected_id is not None:
+            # second press = issue the command
+            cmd = Command(
+                self.game.game_time_ms(),
+                self.selected_id,
+                action,
+                [self.selected_cell, cell]
+            )
+            self.queue.put(cmd)
+            logger.info("Player%s queued %s of %s → %s at %s", self.player, action, self.selected_id, cell, cmd.timestamp)
+            self.selected_id = None
+            self.selected_cell = None
 
     def stop(self):
         keyboard.unhook_all()
