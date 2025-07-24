@@ -169,7 +169,7 @@ class Game:
             # Remove every other piece that *can be captured*
             for p in plist:
                 if p is winner:
-                    p.on_command(Command(0, p.id, "done", [cell]), self.pos)
+                    continue
                 if p.state.can_be_captured():
                     self.pieces.remove(p)
 
