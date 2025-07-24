@@ -1,0 +1,36 @@
+#pragma once
+
+#include "State.hpp"
+#include "Command.hpp"
+#include <memory>
+#include <unordered_map>
+#include <vector>
+#include "Common.hpp"
+
+class Piece {
+public:
+    Piece(std::string id, std::shared_ptr<State> init_state)
+        : id(std::move(id)), state(std::move(init_state)) {}
+
+    std::string id;
+    std::shared_ptr<State> state;
+
+    using Cell = std::pair<int,int>;
+    using Cell2Pieces = std::unordered_map<Cell, std::vector<std::shared_ptr<Piece>>, PairHash>;
+
+    void on_command(const Command& cmd, Cell2Pieces&) {
+        state = state->on_command(cmd);
+    }
+
+    void reset(int start_ms) {
+        state->reset(Command{start_ms,id,"Idle",{}});
+    }
+
+    void update(int now_ms) {
+        state = state->update(now_ms);
+    }
+
+    bool is_movement_blocker() const { return state->physics->is_movement_blocker(); }
+
+    Cell current_cell() const { return state->physics->get_curr_cell(); }
+}; 

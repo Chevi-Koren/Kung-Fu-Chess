@@ -68,4 +68,10 @@ public class Game {
             }
         }
     }
+
+    public void run() {
+        // simple single-frame demo: update map and show board once
+        _update_cell2piece_map();
+        board.show();
+    }
 } 

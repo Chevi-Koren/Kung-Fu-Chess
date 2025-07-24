@@ -1,6 +1,7 @@
 {
   "physics": {
-    "speed_m_per_sec": 0.0
+    "speed_m_per_sec": 0.0,
+	"need_clear_path": false
     
   },
   "graphics": {

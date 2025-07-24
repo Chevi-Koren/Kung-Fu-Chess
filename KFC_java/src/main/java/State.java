@@ -18,6 +18,8 @@ public class State {
 
     public void setTransition(String event, State target) { transitions.put(event.toLowerCase(), target); }
 
+    public Map<String, State> getTransitions() { return transitions; }
+
     public void reset(Command cmd) {
         graphics.reset(cmd);
         physics.reset(cmd);
