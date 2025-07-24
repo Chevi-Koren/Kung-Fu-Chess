@@ -1,4 +1,8 @@
-.idea/*
 **/.idea
 **/.coverage
 **/__pycache__
+/.venv
+**/htmlcov
+**/.pytest_cache
+/KFC_java/target
+**.egg-info
