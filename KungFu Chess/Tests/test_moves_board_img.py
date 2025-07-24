@@ -33,7 +33,6 @@ def test_board_cell_conversions():
     close_all_img_windows()
 
 
-
 def test_img_draw_and_rectangle():
     dst = _blank_img(4, 4)
     src = _blank_img(2, 2)

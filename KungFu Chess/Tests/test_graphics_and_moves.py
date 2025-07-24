@@ -1,25 +1,18 @@
 import pathlib, tempfile
 from types import SimpleNamespace
-import numpy as np
 
 from Board import Board
 from Command import Command
 from Graphics import Graphics
 from GraphicsFactory import MockImgFactory
 from Moves import Moves
+from mock_img import MockImg
 
 
 PIECES_ROOT = pathlib.Path(__file__).parent.parent / "pieces"
 SPRITES_DIR = PIECES_ROOT / "BB" / "states" / "idle" / "sprites"
 
 
-# ───────────────────────── helper ────────────────────────────
-def _blank_img():
-    from mock_img import MockImg
-    return MockImg()
-
-
-# ───────────────────────── graphics tests ────────────────────
 def test_graphics_animation_timing():
     gfx = Graphics(
         sprites_folder=SPRITES_DIR,
@@ -48,7 +41,7 @@ def test_graphics_non_looping():
         fps=10.0,
         img_loader=MockImgFactory(),
     )
-    gfx.frames = [_blank_img() for _ in range(3)]
+    gfx.frames = [MockImg() for _ in range(3)]
     gfx.reset(Command(0, "test", "idle", []))
 
     gfx.update(1000)                # well past the end
@@ -71,7 +64,10 @@ def test_graphics_empty_frames():
         pass
 
 
-# ───────────────────────── moves tests ───────────────────────
+# ---------------------------------------------------------------------------
+#                          MOVES TESTS
+# ---------------------------------------------------------------------------
+
 def test_moves_parsing_edge_cases():
     """Exercises capture / non‑capture tags and out‑of‑table checks."""
     with tempfile.TemporaryDirectory() as tmp:
@@ -86,7 +82,7 @@ def test_moves_parsing_edge_cases():
         mv = Moves(path, dims=(8, 8))
         fake_piece = SimpleNamespace(id="PY")   # colour “Y”
 
-        # capture‑only move
+        # capture‑only move - valid only if dst location has a piece of other color
         assert mv.is_dst_cell_valid(1, 0, [fake_piece], "X")   # piece present
         assert not mv.is_dst_cell_valid(1, 0, None, "X")       # destination empty
 
