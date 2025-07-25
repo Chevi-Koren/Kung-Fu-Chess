@@ -2,6 +2,7 @@
 
 #include <algorithm>
 #include <chrono>
+#include <stdexcept>
 
 Graphics::Graphics(const std::string& sprites_folder,
                    std::pair<int,int> cell_size,
@@ -35,5 +36,6 @@ void Graphics::update(int now_ms) {
 }
 
 const Img& Graphics::get_img() const {
+    if(frames.empty()) throw std::runtime_error("Graphics has no frames loaded");
     return frames[cur_frame];
 } 

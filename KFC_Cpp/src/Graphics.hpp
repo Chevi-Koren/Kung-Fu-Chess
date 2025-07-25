@@ -16,6 +16,10 @@ public:
     void update(int now_ms);
     const Img& get_img() const;
 
+    // Test helpers ---------------------------------------------------------
+    size_t current_frame() const { return cur_frame; }
+    void set_frames(const std::vector<Img>& new_frames) { frames = new_frames; }
+
 private:
     std::vector<Img> frames;
     bool loop{true};

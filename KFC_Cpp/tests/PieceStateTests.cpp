@@ -1,0 +1,106 @@
+#include <doctest/doctest.h>
+
+#include "../src/Board.hpp"
+#include "../src/Physics.hpp"
+#include "../src/State.hpp"
+#include "../src/Piece.hpp"
+#include "../src/Moves.hpp"
+#include "../src/Graphics.hpp"
+#include "../src/img.hpp"
+
+#include <memory>
+#include <unordered_map>
+#include <vector>
+#include <filesystem>
+
+// ---------------------------------------------------------------------------
+// Helpers (mirror ones already used in PhysicsStateTests)
+// ---------------------------------------------------------------------------
+static Board make_board(int cells=8, int px=32) {
+    Img blank;
+    blank.img = {}; // empty mat
+    return Board(px, px, cells, cells, blank);
+}
+
+static std::shared_ptr<Graphics> dummy_gfx() {
+    return std::make_shared<Graphics>("", std::pair<int,int>{32,32});
+}
+
+static std::shared_ptr<Piece> make_piece(const std::string& id, const std::pair<int,int>& cell, Board& board) {
+    auto idle_phys = std::make_shared<IdlePhysics>(board);
+    auto move_phys = std::make_shared<MovePhysics>(board, 1.0); // 1 cell/s
+    auto jump_phys = std::make_shared<JumpPhysics>(board, 0.1); // 100 ms
+
+    auto gfx = dummy_gfx();
+
+    auto idle = std::make_shared<State>(nullptr, gfx, idle_phys);
+    auto move = std::make_shared<State>(nullptr, gfx, move_phys);
+    auto jump = std::make_shared<State>(nullptr, gfx, jump_phys);
+
+    idle->name = "idle";
+    move->name = "move";
+    jump->name = "jump";
+
+    idle->set_transition("move", move);
+    idle->set_transition("jump", jump);
+    move->set_transition("done", idle);
+    jump->set_transition("done", idle);
+
+    auto piece = std::make_shared<Piece>(id, idle);
+
+    // initialise physics position directly via reset
+    idle->reset(Command{0, piece->id, "idle", {cell}});
+
+    return piece;
+}
+
+// ---------------------------------------------------------------------------
+// Tests mirroring test_piece_state_game.py (subset not requiring Game class)
+// ---------------------------------------------------------------------------
+
+TEST_CASE("Piece state transitions via commands") {
+    Board board = make_board();
+    auto piece = make_piece("QW", {4,4}, board);
+
+    CHECK(piece->state->name == "idle");
+    CHECK(piece->current_cell() == std::pair<int,int>{4,4});
+
+    // Move command
+    Piece::Cell2Pieces map;
+    map[piece->current_cell()].push_back(piece);
+
+    piece->on_command(Command{100, piece->id, "move", {{4,4},{4,5}}}, map);
+    CHECK(piece->state->name == "move");
+
+    // After move completes (>1s)
+    piece->update(1200);
+    CHECK(piece->state->name == "idle");
+
+    // Jump command
+    piece->on_command(Command{1300, piece->id, "jump", {{4,4}}}, {});
+    CHECK(piece->state->name == "jump");
+
+    // Jump finishes (>100ms)
+    piece->update(1500);
+    CHECK(piece->state->name == "idle");
+}
+
+TEST_CASE("Piece movement blocker flag") {
+    Board board = make_board();
+    auto piece = make_piece("QW", {4,4}, board);
+
+    CHECK(piece->is_movement_blocker());
+
+    Piece::Cell2Pieces map;
+    map[piece->current_cell()].push_back(piece);
+    piece->on_command(Command{0, piece->id, "move", {{4,4},{4,5}}}, map);
+    CHECK_FALSE(piece->is_movement_blocker());
+}
+
+TEST_CASE("Invalid command keeps state unchanged") {
+    Board board = make_board();
+    auto piece = make_piece("QW", {4,4}, board);
+    auto state_before = piece->state;
+    piece->on_command(Command{0, piece->id, "invalid", {}}, {});
+    CHECK(piece->state == state_before);
+} 

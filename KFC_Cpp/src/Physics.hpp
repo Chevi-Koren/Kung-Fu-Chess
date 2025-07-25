@@ -95,12 +95,16 @@ private:
     std::pair<float,float> movement_vec{0,0};
     double movement_len{0};
     double duration_s{1.0};
-};
+public:
+    double get_speed_m_s() const { return param; }
+    double get_duration_s() const { return duration_s; }
+}; // end MovePhysics
 
 // ---------------------------------------------------------------------------
 class StaticTemporaryPhysics : public BasePhysics {
 public:
     using BasePhysics::BasePhysics;
+    double get_duration_s() const { return param; }
 
     void reset(const Command& cmd) override {
         start_cell = end_cell = cmd.params[0];
