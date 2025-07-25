@@ -6,6 +6,8 @@
 #include <unordered_map>
 #include <string>
 #include <memory>
+#include <optional>
+#include "nlohmann/json.hpp"
 
 class PieceFactory {
 public:
@@ -24,8 +26,8 @@ public:
         // Create physics states
         PhysicsFactory phys_factory(board);
         auto idle_phys = phys_factory.create(cell, "idle", {});
-        auto move_phys = phys_factory.create(cell, "move", {{}});
-        auto jump_phys = phys_factory.create(cell, "jump", {{}});
+        auto move_phys = phys_factory.create(cell, "move", nlohmann::json{});
+        auto jump_phys = phys_factory.create(cell, "jump", nlohmann::json{});
 
         // Graphics – placeholder cell size 32x32
         auto gfx_idle  = gfx_factory.load("", {}, {32,32});

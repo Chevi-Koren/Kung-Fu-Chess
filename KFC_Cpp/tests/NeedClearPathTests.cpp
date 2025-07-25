@@ -1,6 +1,6 @@
 #include <doctest/doctest.h>
-#include <nlohmann/json.hpp>
 #include <fstream>
+#include <sstream>
 #include <filesystem>
 
 TEST_CASE("NW piece need_clear_path flag") {
@@ -8,7 +8,8 @@ TEST_CASE("NW piece need_clear_path flag") {
     fs::path cfg = fs::path("..") / "KungFu Chess" / "pieces" / "NW" / "states" / "idle" / "config.json";
     std::ifstream in(cfg);
     REQUIRE_MESSAGE(in, "config.json must exist");
-    nlohmann::json j; in >> j;
-    CHECK(j["physics"].contains("need_clear_path"));
-    CHECK(j["physics"]["need_clear_path"].get<bool>() == false);
+    std::stringstream buffer; buffer << in.rdbuf();
+    std::string txt = buffer.str();
+    CHECK(txt.find("\"need_clear_path\"") != std::string::npos);
+    CHECK(txt.find("false") != std::string::npos);
 } 

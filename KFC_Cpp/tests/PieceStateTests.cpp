@@ -17,8 +17,7 @@
 // Helpers (mirror ones already used in PhysicsStateTests)
 // ---------------------------------------------------------------------------
 static Board make_board(int cells=8, int px=32) {
-    Img blank;
-    blank.img = {}; // empty mat
+    Img blank; // default blank image
     return Board(px, px, cells, cells, blank);
 }
 
@@ -77,7 +76,8 @@ TEST_CASE("Piece state transitions via commands") {
     CHECK(piece->state->name == "idle");
 
     // Jump command
-    piece->on_command(Command{1300, piece->id, "jump", {{4,4}}}, {});
+    Piece::Cell2Pieces emptyMap;
+    piece->on_command(Command{1300, piece->id, "jump", {{4,4}}}, emptyMap);
     CHECK(piece->state->name == "jump");
 
     // Jump finishes (>100ms)
@@ -101,6 +101,7 @@ TEST_CASE("Invalid command keeps state unchanged") {
     Board board = make_board();
     auto piece = make_piece("QW", {4,4}, board);
     auto state_before = piece->state;
-    piece->on_command(Command{0, piece->id, "invalid", {}}, {});
+    Piece::Cell2Pieces emptyMap2;
+    piece->on_command(Command{0, piece->id, "invalid", {}}, emptyMap2);
     CHECK(piece->state == state_before);
 } 

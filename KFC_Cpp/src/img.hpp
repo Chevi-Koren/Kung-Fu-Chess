@@ -7,6 +7,7 @@
 #  define KFC_HAVE_OPENCV 0
 #  include <string>
 #  include <vector>
+#  include <optional>
 
 namespace cv {
 

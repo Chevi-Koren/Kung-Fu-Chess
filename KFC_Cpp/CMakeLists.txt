@@ -38,7 +38,8 @@ set(OPENCV_LIB_DIR "${OPENCV_DIR}/bin")
 # Include directories (apply to both lib & exe)
 target_include_directories(kungfu_chess_lib PRIVATE
     ${OPENCV_INCLUDE_DIR}
-    ${CMAKE_CURRENT_SOURCE_DIR}/extern)
+    ${CMAKE_CURRENT_SOURCE_DIR}/extern
+    ${JSON_INCLUDE_DIR})
 target_include_directories(${PROJECT_NAME}   PRIVATE
     ${OPENCV_INCLUDE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/extern)
@@ -72,23 +73,9 @@ endif()
 option(KFC_BUILD_TESTS "Build doctest-based unit tests" ON)
 
 # ---------------------------------------------------------------------
-# Fetch third-party single-header libraries
+# Local single-header nlohmann/json stub (under src/json)
 # ---------------------------------------------------------------------
-include(FetchContent)
-
-# nlohmann/json (header-only)
-FetchContent_Declare(
-    nlohmann_json
-    GIT_REPOSITORY https://github.com/nlohmann/json.git
-    GIT_TAG v3.11.2
-    SOURCE_SUBDIR .
-)
-FetchContent_MakeAvailable(nlohmann_json)
-
-# Make json include directory available to all targets
-set(JSON_INCLUDE_DIR ${nlohmann_json_SOURCE_DIR}/single_include)
-
-# doctest header is vendored under src/doctest
+set(JSON_INCLUDE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/src/json)
 
 # ---------------------------------------------------------------------
 # Link libraries + includes for main executable
@@ -101,24 +88,15 @@ target_include_directories(${PROJECT_NAME} PRIVATE ${JSON_INCLUDE_DIR})
 # Unit tests target adjustments
 # ---------------------------------------------------------------------
 if(KFC_BUILD_TESTS)
-    # -----------------------------------------------------------------
-    # Collect test sources and create dedicated test executable.
-    # -----------------------------------------------------------------
     file(GLOB_RECURSE TEST_SOURCES "tests/*.cpp")
-
     add_executable(kungfu_chess_tests ${TEST_SOURCES})
-
-    # Include directories needed by unit-tests
     target_include_directories(kungfu_chess_tests PRIVATE
         ${OPENCV_INCLUDE_DIR}
         ${CMAKE_CURRENT_SOURCE_DIR}/src
         ${JSON_INCLUDE_DIR}
         ${CMAKE_CURRENT_SOURCE_DIR}/extern)
-
-    # Link against main library/executable and third-party headers
     target_link_libraries(kungfu_chess_tests PRIVATE
-        kungfu_chess_lib
-        nlohmann_json::nlohmann_json)
+        kungfu_chess_lib )
 
     # Enable CTest integration so `ctest` can run the suite
     enable_testing()
