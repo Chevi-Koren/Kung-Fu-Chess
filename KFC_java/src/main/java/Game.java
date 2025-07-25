@@ -8,6 +8,7 @@ public class Game {
     public final List<Piece> pieces;
     public final Board board;
     private final long startNs;
+    private long timeFactor = 1; // multiplier for faster tests
     public final BlockingQueue<Command> userInputQueue = new LinkedBlockingQueue<>();
     public final Map<Moves.Pair, List<Piece>> pos = new HashMap<>();
     public final Map<String, Piece> pieceById = new HashMap<>();
@@ -37,7 +38,43 @@ public class Game {
         return wKing && bKing;
     }
 
-    public int game_time_ms() { return (int) ((System.nanoTime() - startNs)/1_000_000); }
+    public long game_time_ms() { return ((System.nanoTime() - startNs)/1_000_000) * timeFactor; }
+
+    public void setTimeFactor(long factor) { this.timeFactor = factor; }
+
+    /* ---------------- win detection --------------- */
+    public boolean _is_win() {
+        long kings = pieces.stream().filter(p -> p.id.startsWith("KW") || p.id.startsWith("KB")).count();
+        return kings < 2;
+    }
+
+    /* ---------------- simplified game loop (no graphics) ------------ */
+    public void _run_game_loop(int numIterations, boolean withGraphics) {
+        int counter = 0;
+        long simNow = game_time_ms();
+        while (!_is_win()) {
+            long now = simNow;
+            for (Piece p: new ArrayList<>(pieces)) {
+                p.update(now);
+            }
+
+            _update_cell2piece_map();
+
+            while (!userInputQueue.isEmpty()) {
+                Command cmd = userInputQueue.poll();
+                _process_input(cmd);
+            }
+
+            _resolve_collisions();
+
+            if (numIterations > 0 && ++counter >= numIterations) {
+                break;
+            }
+
+            // advance simulated time by 500 ms per loop to ensure noticeable physics progression
+            simNow += 500;
+        }
+    }
 
     public void _update_cell2piece_map() {
         pos.clear();

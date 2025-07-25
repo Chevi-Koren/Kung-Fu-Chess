@@ -22,7 +22,12 @@ public class PieceStateGameTest {
         return new Board(cellPx, cellPx, cells, cells, blankImg(cells*cellPx, cells*cellPx));
     }
     private static Graphics graphics() {
-        return new Graphics(Path.of("."), new Dimension(32,32), false, 1.0);
+        try {
+            java.nio.file.Path tmpDir = java.nio.file.Files.createTempDirectory("sprites");
+            java.awt.image.BufferedImage dummy = new java.awt.image.BufferedImage(1,1, java.awt.image.BufferedImage.TYPE_INT_ARGB);
+            javax.imageio.ImageIO.write(dummy, "png", tmpDir.resolve("a.png").toFile());
+            return new Graphics(tmpDir, new Dimension(32,32), false, 1.0);
+        } catch(Exception e) { throw new RuntimeException(e); }
     }
     private static Piece makePiece(String id, Moves.Pair cell, Board board) {
         Physics.IdlePhysics idlePhys = new Physics.IdlePhysics(board);

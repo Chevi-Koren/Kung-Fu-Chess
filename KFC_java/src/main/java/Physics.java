@@ -36,8 +36,15 @@ public abstract class Physics {
         @Override
         public void reset(Command cmd) {
             if (cmd.type.equals("done")) {
-                if (startCell == null) startCell = new Moves.Pair(0,0);
-                endCell = startCell;
+                if (endCell == null) {
+                    // fallback to previous known position if any
+                    if (startCell != null) {
+                        endCell = startCell;
+                    } else {
+                        endCell = new Moves.Pair(0,0);
+                    }
+                }
+                startCell = endCell;
             } else if (cmd.params.isEmpty()) {
                 startCell = endCell = new Moves.Pair(0,0);
             } else {
@@ -90,6 +97,8 @@ public abstract class Physics {
             }
             return null;
         }
+
+        public double getSpeedCellsPerSec() { return param; }
     }
 
     public static class StaticTemporaryPhysics extends Physics {
@@ -112,6 +121,8 @@ public abstract class Physics {
             }
             return null;
         }
+
+        public double getDurationSec() { return durationSec; }
     }
 
     public static class JumpPhysics extends StaticTemporaryPhysics {

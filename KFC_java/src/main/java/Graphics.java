@@ -16,22 +16,17 @@ public class Graphics {
         this.loop = loop;
         this.fps = fps;
         this.frameDurationMs = 1000.0 / fps;
-        // load sprites PNGs in alphabetical order
+        // load sprites PNGs in alphabetical order – propagate errors instead of silently ignoring
         try (java.util.stream.Stream<java.nio.file.Path> paths = java.nio.file.Files.list(spritesFolder)) {
             paths.filter(p -> p.toString().endsWith(".png"))
                  .sorted()
                  .forEach(p -> frames.add(new Img().read(p.toString(), cellSize, true, null)));
-        } catch (java.io.IOException ignored) {}
+        } catch (java.io.IOException e) {
+            throw new RuntimeException("Failed listing sprites folder: " + spritesFolder, e);
+        }
+
         if (frames.isEmpty()) {
-            // create single blank frame placeholder
-            java.awt.image.BufferedImage blank = new java.awt.image.BufferedImage(cellSize.width, cellSize.height, java.awt.image.BufferedImage.TYPE_INT_ARGB);
-            Img img = new Img();
-            try {
-                java.lang.reflect.Field f = Img.class.getDeclaredField("img");
-                f.setAccessible(true);
-                f.set(img, blank);
-            } catch (Exception e) { throw new RuntimeException(e); }
-            frames.add(img);
+            throw new IllegalArgumentException("No PNG sprite frames found in folder: " + spritesFolder);
         }
     }
 
@@ -54,6 +49,9 @@ public class Graphics {
         if (frames.isEmpty()) throw new IllegalStateException("No frames loaded for animation.");
         return frames.get(curFrame);
     }
+
+    // Expose frames per second for tests
+    public double getFps() { return fps; }
 
     // For tests – allow direct access to frames
     public List<Img> getFrames() { return frames; }

@@ -30,6 +30,11 @@ public class State {
         State next = transitions.get(key);
         if (next == null) return this;   // no transition defined
 
+        // ─── refuse transition if MOVE lacks src & dst parameters ─────────
+        if ("move".equals(key) && (cmd.params == null || cmd.params.size() < 2)) {
+            return this;
+        }
+
         // ─── additional legality checks for MOVE commands ────────────────
         if ("move".equals(key) && moves != null && cmd.params != null && cmd.params.size() >= 2 && cell2piece != null) {
             Moves.Pair src = (Moves.Pair) cmd.params.get(0);

@@ -33,8 +33,12 @@ public class Moves {
     }
 
     public boolean isDstCellValid(int dr, int dc, boolean dstHasPiece) {
-        String tag = moves.getOrDefault(new Pair(dr, dc), "");
-        if (tag.isEmpty()) return true; // can both
+        String tag = moves.get(new Pair(dr, dc));
+        if (tag == null) {
+            // Unknown move – not allowed (Python version returns False)
+            return false;
+        }
+        if (tag.isEmpty()) return true; // can both capture & non-capture
         switch (tag) {
             case "capture":
                 return dstHasPiece;

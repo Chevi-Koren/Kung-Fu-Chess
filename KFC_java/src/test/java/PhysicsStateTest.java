@@ -26,7 +26,12 @@ public class PhysicsStateTest {
         return new Board(cellPx, cellPx, cells, cells, blankImg(cells, cells));
     }
     private static Graphics graphics() {
-        return new Graphics(Path.of("."), new Dimension(1,1), false, 1.0);
+        try {
+            java.nio.file.Path tmpDir = java.nio.file.Files.createTempDirectory("sprites");
+            java.awt.image.BufferedImage dummy = new java.awt.image.BufferedImage(1,1, java.awt.image.BufferedImage.TYPE_INT_ARGB);
+            javax.imageio.ImageIO.write(dummy, "png", tmpDir.resolve("a.png").toFile());
+            return new Graphics(tmpDir, new Dimension(1,1), false, 1.0);
+        } catch(Exception e) { throw new RuntimeException(e); }
     }
 
     @Test
