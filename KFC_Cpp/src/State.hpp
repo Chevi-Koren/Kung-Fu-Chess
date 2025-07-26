@@ -19,7 +19,8 @@ public:
     std::shared_ptr<Graphics> graphics;
     std::shared_ptr<BasePhysics> physics;
 
-    std::unordered_map<std::string, std::weak_ptr<State>> transitions;
+    // Keep strong references so target states are not destroyed while only reachable via this map
+    std::unordered_map<std::string, std::shared_ptr<State>> transitions;
     std::string name;
 
     void set_transition(const std::string& event, const std::shared_ptr<State>& target) { transitions[event] = target; }
@@ -34,7 +35,8 @@ public:
         for(auto& ch : key) ch = static_cast<char>(std::tolower(static_cast<unsigned char>(ch)));
         auto it = transitions.find(key);
         if(it != transitions.end()) {
-            if(auto next = it->second.lock()) {
+            auto next = it->second;
+            if(next) {
                 next->reset(cmd);
                 return next;
             }
