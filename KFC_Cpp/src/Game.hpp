@@ -47,6 +47,8 @@ public:
 
     std::vector<PiecePtr> pieces;
     Board board;
+    // helper for tests to inject commands
+    void enqueue_command(const Command& cmd);
 private:
     // --- helpers mirroring Python implementation ---
     void start_user_input_thread(); // no-op stub for now
@@ -180,6 +182,10 @@ inline void Game::validate() {
         if(!seen.insert(cell).second) throw InvalidBoard("Duplicate cell");
     }
     if(!has_KW || !has_KB) throw InvalidBoard("Missing kings");
+}
+
+inline void Game::enqueue_command(const Command& cmd) {
+    user_input_queue.push_back(cmd);
 }
 
 // ---------------------------------------------------------------------------
