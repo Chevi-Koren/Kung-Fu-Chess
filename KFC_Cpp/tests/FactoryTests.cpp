@@ -47,6 +47,6 @@ TEST_CASE("PieceFactory generates unique piece ids and correct location") {
 TEST_CASE("create_game builds full board of 32 pieces") {
     auto gf = std::make_shared<MockImgFactory>();
     // the relative path is relative to the exe path , not the code path. 
-    Game game = create_game("../../../../KungFu Chess/pieces", gf);
+    Game game = create_game("../../../../pieces", gf);
     CHECK(game.pieces.size() == 32);
 } 

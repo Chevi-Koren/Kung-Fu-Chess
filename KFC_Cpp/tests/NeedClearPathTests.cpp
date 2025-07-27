@@ -5,7 +5,7 @@
 
 TEST_CASE("NW piece need_clear_path flag") {
     namespace fs = std::filesystem;
-    fs::path cfg = fs::path("../../../../") / "KungFu Chess" / "pieces" / "NW" / "states" / "idle" / "config.json";
+    fs::path cfg = fs::path("../../../../") / "pieces" / "NW" / "states" / "idle" / "config.json";
     std::ifstream in(cfg);
     REQUIRE_MESSAGE(in, "config.json must exist");
     std::stringstream buffer; buffer << in.rdbuf();
