@@ -1,6 +1,5 @@
 import pathlib
 from Board import Board
-from img import Img
 from PieceFactory import PieceFactory
 from Game import Game
 
@@ -20,7 +19,7 @@ def create_game(pieces_root: str | pathlib.Path, img_factory) -> Game:
         raise FileNotFoundError(board_csv)
 
     # Board image: use board.png beside this file if present, else blank RGBA
-    board_png = pathlib.Path(__file__).parent / "board.png"
+    board_png = pieces_root / "board.png"
     if not board_png.exists():
         raise FileNotFoundError(board_png)
 

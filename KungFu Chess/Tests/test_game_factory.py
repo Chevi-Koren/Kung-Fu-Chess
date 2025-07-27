@@ -12,7 +12,7 @@ from Game import Game
 # ---------------------------------------------------------------------------
 # Paths
 # ---------------------------------------------------------------------------
-ROOT_DIR = pathlib.Path(__file__).parent.parent
+ROOT_DIR = pathlib.Path(__file__).parent.parent.parent
 PIECES_DIR = ROOT_DIR / "pieces"
 
 # ---------------------------------------------------------------------------

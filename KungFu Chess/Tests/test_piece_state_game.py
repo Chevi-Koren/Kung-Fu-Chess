@@ -12,7 +12,7 @@ from GraphicsFactory import MockImgFactory
 from img import Img
 from Moves import Moves
 
-ROOT_DIR = pathlib.Path(__file__).parent.parent
+ROOT_DIR = pathlib.Path(__file__).parent.parent.parent
 PIECES_DIR = ROOT_DIR / "pieces"
 MOVES_FILE = PIECES_DIR / "QW" / "states" / "idle" / "moves.txt"
 

@@ -16,7 +16,7 @@ from mock_img import MockImg
 # Helper utilities – these rely **only on production code**, no test doubles
 # ---------------------------------------------------------------------------
 
-PIECES_ROOT = pathlib.Path(__file__).parent.parent / "pieces"
+PIECES_ROOT = pathlib.Path(__file__).parent.parent.parent / "pieces"
 BOARD_CSV   = PIECES_ROOT / "board.csv"
 SPRITES_DIR = PIECES_ROOT / "BB" / "states" / "idle" / "sprites"
 

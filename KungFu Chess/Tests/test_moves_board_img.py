@@ -2,7 +2,7 @@ import pathlib, numpy as np
 
 from Board import Board
 from Moves import Moves
-from img import Img, draw_rect, close_all_img_windows
+from img import Img
 
 
 # ---------------------------------------------------------------------------

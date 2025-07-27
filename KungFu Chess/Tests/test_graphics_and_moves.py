@@ -9,7 +9,7 @@ from Moves import Moves
 from mock_img import MockImg
 
 
-PIECES_ROOT = pathlib.Path(__file__).parent.parent / "pieces"
+PIECES_ROOT = pathlib.Path(__file__).parent.parent.parent / "pieces"
 SPRITES_DIR = PIECES_ROOT / "BB" / "states" / "idle" / "sprites"
 
 
