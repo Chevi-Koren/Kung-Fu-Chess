@@ -4,7 +4,7 @@ import static org.junit.jupiter.api.Assertions.*;
 
 public class KeyboardProducerTest {
 
-    private static final Path PIECES_DIR = Path.of("..", "..", "pieces");
+    private static final Path PIECES_DIR = Path.of("..", "pieces");
 
     @Test
     void testProducerThreadLifecycle() throws InterruptedException {

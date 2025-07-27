@@ -11,7 +11,7 @@ public class FactoriesTest {
         return new Board(cell, cell, 8,8, bg);
     }
 
-    private static final Path PIECES_DIR = Path.of("..", "..", "pieces");
+    private static final Path PIECES_DIR = Path.of("..", "pieces");
 
     /* ---------------- PHYSICS FACTORY ---------------- */
     @Test

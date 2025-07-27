@@ -3,7 +3,7 @@ import java.nio.file.Path;
 import static org.junit.jupiter.api.Assertions.*;
 
 public class IntegrationTest {
-    private static final Path PIECES_DIR = Path.of("..", "..", "pieces");
+    private static final Path PIECES_DIR = Path.of("..", "pieces");
 
     @Test
     void testGameInitialisesFromCsv() {

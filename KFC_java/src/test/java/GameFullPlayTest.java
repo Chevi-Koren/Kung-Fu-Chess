@@ -3,7 +3,7 @@ import java.nio.file.Path;
 import static org.junit.jupiter.api.Assertions.*;
 
 public class GameFullPlayTest {
-    private static final Path PIECES_DIR = Path.of("..", "..", "pieces");
+    private static final Path PIECES_DIR = Path.of("..", "pieces");
 
     private void runLoops(Game game, int loops) {
         game._run_game_loop(loops, false);
