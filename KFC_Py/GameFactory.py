@@ -3,7 +3,7 @@ from Board import Board
 from PieceFactory import PieceFactory
 from Game import Game
 
-CELL_PX = 64
+CELL_PX = 96
 
 
 def create_game(pieces_root: str | pathlib.Path, img_factory) -> Game:
@@ -13,7 +13,29 @@ def create_game(pieces_root: str | pathlib.Path, img_factory) -> Game:
     (or loads board.png if present), instantiates every piece via PieceFactory
     and returns a ready-to-run *Game* instance.
     """
-    pieces_root = pathlib.Path(pieces_root)
+    import os
+    
+    # Find correct pieces path
+    if isinstance(pieces_root, str):
+        possible_paths = [
+            pieces_root,
+            f"../{pieces_root}",
+            f"../CTD25_Solutions_SC/{pieces_root}"
+        ]
+        
+        actual_path = None
+        for path in possible_paths:
+            if os.path.exists(os.path.join(path, "board.csv")):
+                actual_path = path
+                break
+        
+        if not actual_path:
+            raise FileNotFoundError(f"Could not find pieces directory with board.csv")
+        
+        pieces_root = pathlib.Path(actual_path)
+    else:
+        pieces_root = pathlib.Path(pieces_root)
+    
     board_csv = pieces_root / "board.csv"
     if not board_csv.exists():
         raise FileNotFoundError(board_csv)

@@ -5,6 +5,7 @@ from abc import ABC, abstractmethod
 import math, logging
 
 from Command import Command
+from sounds import Sound
 from Board import Board
 import numpy as np
 
@@ -59,6 +60,11 @@ class BasePhysics(ABC):  # Interface/base class
 
     def is_need_clear_path(self) -> bool:
         return self.do_i_need_clear_path
+    
+    def set_curr_cell(self, cell: Tuple[int, int]):
+        """Force set current cell position."""
+        self._curr_pos_m = self.board.cell_to_m(cell)
+        self._start_cell = self._end_cell = cell
 
 
 class IdlePhysics(BasePhysics):
@@ -67,6 +73,7 @@ class IdlePhysics(BasePhysics):
         self._end_cell = self._start_cell = cmd.params[0]
         self._curr_pos_m = self.board.cell_to_m(self._start_cell)
         self._start_ms = cmd.timestamp
+        return False
 
     def update(self, now_ms: int):
         return None
@@ -82,13 +89,18 @@ class MovePhysics(BasePhysics):
 
     def __init__(self, board: Board, param: float = 1.0):
         super().__init__(board, param)
+        self.sound = Sound()
         self._speed_m_s = param
         if self._speed_m_s == 0:
             raise ValueError("_speed_m_s is 0")
         if self._speed_m_s < 0:
             self._speed_m_s = abs(self._speed_m_s)
 
+    def can_be_captured(self) -> bool:
+        return False    
+
     def reset(self, cmd: Command):
+        self.sound.play("sounds/foot_step.wav")  # Play move sound
         self._start_cell = cmd.params[0]
         self._end_cell = cmd.params[1]
         self._curr_pos_m = self.board.cell_to_m(self._start_cell)
@@ -99,6 +111,7 @@ class MovePhysics(BasePhysics):
         self._movement_vector_length = math.hypot(*self._movement_vector)
         self._movement_vector = self._movement_vector / self._movement_vector_length
         self._duration_s = self._movement_vector_length / self._speed_m_s
+        return True
 
     def update(self, now_ms: int):
         seconds_passed = (now_ms - self._start_ms) / 1000
@@ -106,6 +119,7 @@ class MovePhysics(BasePhysics):
             self.board.cell_to_m(self._start_cell)) + self._movement_vector * seconds_passed * self._speed_m_s
 
         if seconds_passed >= self._duration_s:
+            self.sound.stop()  # Stop move sound
             return Command(now_ms, None, "done", [self._end_cell])
 
         return None
@@ -126,6 +140,7 @@ class StaticTemporaryPhysics(BasePhysics):
         self._end_cell = self._start_cell = cmd.params[0]
         self._curr_pos_m = self.board.cell_to_m(self._start_cell)
         self._start_ms = cmd.timestamp
+        return False
 
     def update(self, now_ms: int):
         seconds_passed = (now_ms - self._start_ms) / 1000
@@ -166,6 +181,7 @@ class JumpPhysics(StaticTemporaryPhysics):
         # Note: `update()` from StaticTemporaryPhysics will use
         # `self.duration_s` to emit the "done" event after the cooldown
         # period, allowing the state-machine to transition afterwards.
+        return False
 
     def can_be_captured(self) -> bool:
         return False

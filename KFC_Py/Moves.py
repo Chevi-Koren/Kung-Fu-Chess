@@ -80,6 +80,11 @@ class Moves:
 
         move_tag = self.moves[(dr, dc)]
         if move_tag == "":  # No tag = can both capture/non-capture
+            # Still need to check that we're not capturing friendly pieces
+            if dst_pieces is not None:
+                friendly_pieces = [p for p in dst_pieces if p.id[1] == my_color]
+                if friendly_pieces:
+                    return False  # Can't capture friendly pieces
             return True
 
         if move_tag == "capture":
@@ -108,16 +113,26 @@ class Moves:
         """Check if there are any pieces blocking the path between src and dst."""
         dr = dst_cell[0] - src_cell[0]
         dc = dst_cell[1] - src_cell[1]
-        cell2piece = \
-            {k: v for k, v in cell2piece_all.items() \
-             if any(piece.id[1] == my_color for piece in v)}
+        
+        # Check ALL pieces as potential blockers, not just same color
+        cell2piece = cell2piece_all  # Use all pieces, not filtered by color
 
+        # Only check destination for enemy pieces (can capture)
         if dst_cell in cell2piece:
-            print(f"Path not clear at {dst_cell}")
-            return False
+            # If destination has pieces, check if we can capture any
+            enemy_pieces = [p for p in cell2piece[dst_cell] if p.id[1] != my_color]
+            friendly_pieces = [p for p in cell2piece[dst_cell] if p.id[1] == my_color]
+            
+            # Can't move to cell with friendly pieces
+            if friendly_pieces:
+                pass  # Path blocked by friendly piece
+                return False
 
         # Get unit vector for movement direction
         steps = max(abs(dr), abs(dc))
+        if steps == 0:
+            return True  # Same cell
+            
         step_r = dr / steps
         step_c = dc / steps
 
@@ -126,7 +141,8 @@ class Moves:
             r = src_cell[0] + int(i * step_r)
             c = src_cell[1] + int(i * step_c)
             if (r, c) in cell2piece:
-                print(f"Path not clear at {(r,c)}")
+                # ANY piece in the path blocks movement
+                pass  # Path blocked by piece
                 return False
 
         return True

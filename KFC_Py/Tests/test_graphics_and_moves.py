@@ -16,7 +16,7 @@ SPRITES_DIR = PIECES_ROOT / "BB" / "states" / "idle" / "sprites"
 def test_graphics_animation_timing():
     gfx = Graphics(
         sprites_folder=SPRITES_DIR,
-        cell_size=(32, 32),
+        cell_size=(96, 96),
         loop=True,
         fps=10.0,
         img_loader=MockImgFactory(),
@@ -36,7 +36,7 @@ def test_graphics_animation_timing():
 def test_graphics_non_looping():
     gfx = Graphics(
         sprites_folder=SPRITES_DIR,
-        cell_size=(32, 32),
+        cell_size=(96, 96),
         loop=False,
         fps=10.0,
         img_loader=MockImgFactory(),
@@ -51,7 +51,7 @@ def test_graphics_non_looping():
 def test_graphics_empty_frames():
     gfx = Graphics(
         sprites_folder=SPRITES_DIR,
-        cell_size=(32, 32),
+        cell_size=(96, 96),
         loop=True,
         fps=10.0,
         img_loader=MockImgFactory(),

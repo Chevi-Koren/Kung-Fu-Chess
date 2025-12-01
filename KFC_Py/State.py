@@ -27,14 +27,15 @@ class State:
 
     def reset(self, cmd: Command):
         self.graphics.reset(cmd)
-        self.physics.reset(cmd)
+        flag = self.physics.reset(cmd)
+        return flag
 
     def on_command(self, cmd: Command, cell2piece: Dict[Tuple[int, int], List[Piece]], my_color: str = "X"):
         """Process a command and potentially transition to a new state."""
         nxt = self.transitions.get(cmd.type)
 
         if not nxt:
-            return self
+            return self, False
 
         if cmd.type == "move":
             if self.moves is None or len(cmd.params) < 2:
@@ -47,12 +48,12 @@ class State:
 
             if not self.moves.is_valid(src_cell, dst_cell, cell2piece, self.physics.is_need_clear_path(), my_color):
                 logger.debug(f"Invalid move: {src_cell} → {dst_cell}")
-                return self
+                return self, False
 
         logger.debug("[TRANSITION] %s: %s ? %s", cmd.type, self, nxt)
 
-        nxt.reset(cmd)
-        return nxt
+        flag =nxt.reset(cmd)
+        return nxt, flag
 
     def update(self, now_ms: int) -> State:
         internal = self.physics.update(now_ms)
@@ -60,7 +61,7 @@ class State:
             logger.debug("[DBG] internal:", internal.type)
             return self.on_command(internal, None)
         self.graphics.update(now_ms)
-        return self
+        return self, False
 
     def can_be_captured(self) -> bool:
         return self.physics.can_be_captured()

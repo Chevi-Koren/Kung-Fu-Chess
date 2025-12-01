@@ -22,13 +22,13 @@ def _blank_img(w: int = 8, h: int = 8):
 
 
 def _board(cells: int = 8):
-    cell_px = 32
+    cell_px = 96
     return Board(cell_px, cell_px, cells, cells, _blank_img(cells * cell_px, cells * cell_px))
 
 
 def _graphics():
     sprites_dir = pathlib.Path(__file__).parent.parent.parent / "pieces" / "BB" / "states" / "idle" / "sprites"
-    return Graphics(sprites_folder=sprites_dir, cell_size=(32, 32),
+    return Graphics(sprites_folder=sprites_dir, cell_size=(96, 96),
                     loop=False, fps=1.0,
                     img_loader=MockImgFactory())
 

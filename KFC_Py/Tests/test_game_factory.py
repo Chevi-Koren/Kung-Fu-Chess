@@ -33,7 +33,7 @@ def test_graphics_factory_uses_custom_img_factory():
     gf = GraphicsFactory(img_factory=MockImgFactory())
 
     sprites_dir = PIECES_DIR / "PW" / "states" / "idle" / "sprites"
-    gfx = gf.load(sprites_dir, cfg={}, cell_size=(32, 32))
+    gfx = gf.load(sprites_dir, cfg={}, cell_size=(96, 96))
 
     for frm in gfx.frames:
         assert isinstance(frm, MockImg) 

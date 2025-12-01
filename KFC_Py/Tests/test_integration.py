@@ -21,14 +21,14 @@ BOARD_CSV   = PIECES_ROOT / "board.csv"
 SPRITES_DIR = PIECES_ROOT / "BB" / "states" / "idle" / "sprites"
 
 
-def _make_board(cell_px: int = 32):
+def _make_board(cell_px: int = 96):
     """Create an 8×8 board with a blank background."""
     W_cells = H_cells = 8
     img = MockImg()
     return Board(cell_px, cell_px, W_cells, H_cells, img)
 
 
-def _build_graphics(cell_px: int = 32):
+def _build_graphics(cell_px: int = 96):
     """Return a Graphics instance with a single blank sprite."""
     return Graphics(sprites_folder=SPRITES_DIR,
                     cell_size=(cell_px, cell_px),

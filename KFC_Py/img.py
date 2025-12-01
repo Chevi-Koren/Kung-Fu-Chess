@@ -53,8 +53,6 @@ class Img:
             if self.img.shape[0] == 0 or self.img.shape[1] == 0:
                 raise ValueError(f"Invalid resized image: {self.img.shape} from {path}")
 
-            print(f"[DEBUG] Resized {path} to {self.img.shape}")
-
         return self
 
     def copy(self):
@@ -104,7 +102,7 @@ class Img:
     def show(self):
         if self.img is None:
             raise ValueError("Image not loaded.")
-        cv2.imshow("Image", self.img)
+        cv2.imshow("Chess Game", self.img)
         cv2.waitKey(1)
 
     def draw_rect(self, x1, y1, x2, y2, color):

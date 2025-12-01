@@ -92,9 +92,17 @@ class KeyboardProducer(threading.Thread):
                     print(f"[WARN] No piece at {cell}")
                     return
 
+                # Check if player can control this piece
+                piece_color = piece.id[1]  # W or B
+                if self.player == 1 and piece_color != 'W':
+                    print(f"[WARN] Player{self.player} cannot control {piece.id} (wrong color)")
+                    return
+                elif self.player == 2 and piece_color != 'B':
+                    print(f"[WARN] Player{self.player} cannot control {piece.id} (wrong color)")
+                    return
+
                 self.selected_id = piece.id
                 self.selected_cell = cell
-                print(f"[KEY] Player{self.player} selected {piece.id} at {cell}")
                 return
 
             elif cell == self.selected_cell:  # selected same place
@@ -112,6 +120,22 @@ class KeyboardProducer(threading.Thread):
                 logger.info(f"Player{self.player} queued {cmd}")
                 self.selected_id = None
                 self.selected_cell = None
+
+        elif action == "jump":
+            if self.selected_id is not None:
+                # Send jump command for the selected piece
+                cmd = Command(
+                    self.game.game_time_ms(),
+                    self.selected_id,
+                    "jump",
+                    [self.selected_cell, cell]
+                )
+                self.queue.put(cmd)
+                logger.info(f"Player{self.player} jumped {self.selected_id} from {self.selected_cell} to {cell}")
+                self.selected_id = None
+                self.selected_cell = None
+            else:
+                print(f"[WARN] Player{self.player} tried to jump but no piece selected")
 
     def stop(self):
         keyboard.unhook_all()

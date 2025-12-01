@@ -13,7 +13,7 @@ from GraphicsFactory import GraphicsFactory, MockImgFactory
 # ---------------------------------------------------------------------------
 
 def _board():
-    return Board(cell_H_pix=32, cell_W_pix=32, W_cells=8, H_cells=8, img=MockImg())
+    return Board(cell_H_pix=96, cell_W_pix=96, W_cells=8, H_cells=8, img=MockImg())
 
 
 ROOT_DIR = pathlib.Path(__file__).parent.parent.parent
