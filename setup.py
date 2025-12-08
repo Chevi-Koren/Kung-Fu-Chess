@@ -8,6 +8,8 @@ setup(
         'numpy',
         'keyboard',
         'pytest',
-        'pytest-cov'
+        'pytest-cov',
+        'websocket-client==1.8.0',
+        'websockets==15.0.1'
     ],
 ) 

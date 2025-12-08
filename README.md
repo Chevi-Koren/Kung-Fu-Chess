@@ -59,5 +59,25 @@ Kung-Fu Chess is a real-time, multiplayer chess game with a unique twist: player
 ## Testing
 Run unit and integration tests from the `KFC_Py/Tests/` and `pub/` folders.
 
+## Running with Docker
+You can build and run the Kung-Fu Chess server using Docker for easy deployment and sharing:
+
+### Build the Docker image
+```bash
+docker build -t kung_fu_chess .
+```
+
+### Run the server in a Docker container
+```bash
+docker run -d -p 8888:8888 kung_fu_chess
+```
+The server will be accessible on port 8888. Make sure to update your client(s) to connect to the correct host and port.
+
+You can also push the image to Docker Hub for sharing and deployment on other machines.
+
+### Docker Hub
+The Docker image can be uploaded and shared via Docker Hub, making it easy for anyone to pull and run the server from anywhere.
+This project has been published to Docker Hub for public use.
+
 ## Author
 Yocheved Koren
