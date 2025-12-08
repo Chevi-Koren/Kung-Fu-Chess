@@ -11,7 +11,7 @@ class ChessServer:
     def start(self):
         server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         server.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-        server.bind(('localhost', 8888))
+        server.bind(('0.0.0.0', 8888))
         server.listen(2)
         print("Chess server started on localhost:8888")
         
